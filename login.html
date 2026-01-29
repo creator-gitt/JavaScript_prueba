@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #00B4D8 0%, #0096C7 100%);
+        }
+        .auth-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        .auth-container h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .form-control:focus {
+            border-color: #00B4D8;
+            box-shadow: 0 0 0 0.2rem rgba(0, 180, 216, 0.25);
+        }
+        .btn-submit {
+            width: 100%;
+            background-color: #00B4D8;
+            border: none;
+            color: white;
+            font-weight: bold;
+        }
+        .btn-submit:hover {
+            background-color: #0096C7;
+            color: white;
+        }
+        .message {
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .toggle-form {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .toggle-form a {
+            color: #00B4D8;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .toggle-form a:hover {
+            text-decoration: underline;
+        }
+        .form-section {
+            display: none;
+        }
+        .form-section.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <!-- SECCIÓN LOGIN -->
+        <div class="form-section active" id="loginSection">
+            <h2>Login</h2>
+            <div class="message error-message" id="loginError"></div>
+            <form id="frmLogin">
+                <div class="mb-3">
+                    <label for="txtLoginUsuario" class="form-label">Usuario:</label>
+                    <input type="text" class="form-control" id="txtLoginUsuario" placeholder="Ingrese su usuario" required>
+                </div>
+                <div class="mb-3">
+                    <label for="txtLoginPassword" class="form-label">Contraseña:</label>
+                    <input type="password" class="form-control" id="txtLoginPassword" placeholder="Ingrese su contraseña" required>
+                </div>
+                <button type="submit" class="btn btn-submit">Ingresar</button>
+            </form>
+            <div class="toggle-form">
+                ¿No tienes cuenta? <a onclick="toggleForm()">Regístrate aquí</a>
+            </div>
+        </div>
+
+        <!-- SECCIÓN REGISTRO -->
+        <div class="form-section" id="registroSection">
+            <h2>Registro</h2>
+            <div class="message error-message" id="registroError"></div>
+            <div class="message success-message" id="registroSuccess"></div>
+            <form id="frmRegistro">
+                <div class="mb-3">
+                    <label for="txtRegistroUsuario" class="form-label">Usuario:</label>
+                    <input type="text" class="form-control" id="txtRegistroUsuario" placeholder="Crea un usuario" required>
+                </div>
+                <div class="mb-3">
+                    <label for="txtRegistroPassword" class="form-label">Contraseña:</label>
+                    <input type="password" class="form-control" id="txtRegistroPassword" placeholder="Crea una contraseña" required>
+                </div>
+                <div class="mb-3">
+                    <label for="txtRegistroPasswordConfirm" class="form-label">Confirmar Contraseña:</label>
+                    <input type="password" class="form-control" id="txtRegistroPasswordConfirm" placeholder="Confirma tu contraseña" required>
+                </div>
+                <button type="submit" class="btn btn-submit">Registrarse</button>
+            </form>
+            <div class="toggle-form">
+                ¿Ya tienes cuenta? <a onclick="toggleForm()">Inicia sesión aquí</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="login.js"></script>
+</body>
+</html>
