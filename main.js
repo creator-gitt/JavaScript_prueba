@@ -1,22 +1,18 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Verificar si el usuario está loggeado
-    if(!sessionStorage.getItem("usuarioLoggeado")) {
-        window.location.href = "Login.html";
-        return;
-    }
-    
+
+
     frmAlumnos.addEventListener("submit", (e) => {
         e.preventDefault();
-       guardarAlumno();
+        guardarAlumno();
     });
     mostrarAlumnos();
 });
-function mostrarAlumnos(){
+function mostrarAlumnos() {
     let $tblAlumnos = document.querySelector("#tblAlumnos tbody"),
         n = localStorage.length,
         filas = "";
     $tblAlumnos.innerHTML = "";
-    for(let i=0; i<n; i++){
+    for (let i = 0; i < n; i++) {
         let key = localStorage.key(i),
             data = JSON.parse(localStorage.getItem(key));
         filas += `
@@ -35,7 +31,7 @@ function mostrarAlumnos(){
     }
     $tblAlumnos.innerHTML = filas;
 }
-function modificarAlumno(alumno){
+function modificarAlumno(alumno) {
     txtCodigoAlumno.value = alumno.codigo;
     txtnombreAlumno.value = alumno.nombre;
     txtDireccionAlumno.value = alumno.direccion;
@@ -44,13 +40,13 @@ function modificarAlumno(alumno){
     txtCodigoAlumno.disabled = true; // Deshabilitar código para que no se pueda cambiar
 }
 
-function eliminarAlumno(alumno){
-    if(confirm("¿Deseas eliminar al alumno " + alumno.nombre + "?")){
+function eliminarAlumno(alumno) {
+    if (confirm("¿Deseas eliminar al alumno " + alumno.nombre + "?")) {
         let id = "1"; // Buscar el ID correcto
-        for(let i = 0; i < localStorage.length; i++){
+        for (let i = 0; i < localStorage.length; i++) {
             let key = localStorage.key(i);
             let datos = JSON.parse(localStorage.getItem(key));
-            if(datos.codigo === alumno.codigo){
+            if (datos.codigo === alumno.codigo) {
                 id = key;
                 break;
             }
@@ -69,58 +65,54 @@ function guardarAlumno() {
         email: txtEmailAlumno.value,
         telefono: txtTelefonoAlumno.value
     };
-    
-    if(esEdicion){
+
+    if (esEdicion) {
         // Modo edición: buscar y actualizar el registro existente
         let idAEliminar = null;
-        for(let i = 0; i < localStorage.length; i++){
+        for (let i = 0; i < localStorage.length; i++) {
             let key = localStorage.key(i);
             let alumnoGuardado = JSON.parse(localStorage.getItem(key));
-            if(alumnoGuardado.codigo === datos.codigo){
+            if (alumnoGuardado.codigo === datos.codigo) {
                 idAEliminar = key;
                 break;
             }
         }
-        if(idAEliminar){
+        if (idAEliminar) {
             localStorage.removeItem(idAEliminar);
             datos.id = idAEliminar; // Mantener el mismo ID
         }
     } else {
         // Modo nuevo: verificar que no exista
         let codigoDuplicado = buscarAlumno(datos.codigo);
-        if(codigoDuplicado){
-            alert("El codigo del alumno ya existe, "+ codigoDuplicado.nombre);
+        if (codigoDuplicado) {
+            alert("El codigo del alumno ya existe, " + codigoDuplicado.nombre);
             return;
         }
         datos.id = getId();
     }
-    
+
     localStorage.setItem(datos.id, JSON.stringify(datos));
     limpiarFormulario();
 }
 
-function getId(){
+function getId() {
     return localStorage.length + 1;
 }
 
-function limpiarFormulario(){
+function limpiarFormulario() {
     frmAlumnos.reset();
     txtCodigoAlumno.disabled = false; // Habilitar el código para nuevos registros
 }
 
-function buscarAlumno(codigo=''){
+function buscarAlumno(codigo = '') {
     let n = localStorage.length;
-    for(let i = 0; i < n; i++){
+    for (let i = 0; i < n; i++) {
         let key = localStorage.key(i);
         let datos = JSON.parse(localStorage.getItem(key));
-        if(datos?.codigo && datos.codigo.trim().toUpperCase() == codigo.trim().toUpperCase()){
+        if (datos?.codigo && datos.codigo.trim().toUpperCase() == codigo.trim().toUpperCase()) {
             return datos;
         }
     }
     return null;
 }
 
-function cerrarSesion(){
-    sessionStorage.removeItem("usuarioLoggeado");
-    window.location.href = "Login.html";
-}
