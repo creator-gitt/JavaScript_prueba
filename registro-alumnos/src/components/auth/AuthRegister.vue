@@ -21,15 +21,24 @@ const password = ref('')
 const router = useRouter()
 
 function register() {
-  const users = JSON.parse(localStorage.getItem('users') || '[]')
-  if (users.some(u => u.email === email.value)) {
-    alert('El usuario ya existe')
-    return
-  }
-  users.push({ name: name.value, email: email.value, password: password.value })
-  localStorage.setItem('users', JSON.stringify(users))
-  alert('Registro exitoso')
-  router.push('/login')
+  fetch('http://localhost:3000/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name.value, email: email.value, password: password.value })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.error) {
+      alert(data.error)
+    } else {
+      alert(data.message)
+      router.push('/login')
+    }
+  })
+  .catch(err => {
+    console.error(err)
+    alert('Error al conectar con el servidor')
+  })
 }
 
 function goLogin() {

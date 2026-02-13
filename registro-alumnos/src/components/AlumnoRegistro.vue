@@ -334,6 +334,17 @@ function saveToStorage() {
   localStorage.setItem('alumnos', JSON.stringify(alumnos.value))
 }
 
-onMounted(() => loadAlumnos())
+onMounted(() => {
+  loadAlumnos()
+  const userStr = localStorage.getItem('user')
+  if (userStr) {
+    const user = JSON.parse(userStr)
+    // Pre-llenar datos si es un registro nuevo
+    if (!editing.value && !alumno.nombre && !alumno.email) {
+      alumno.nombre = user.name || ''
+      alumno.email = user.email || ''
+    }
+  }
+})
 </script>
 

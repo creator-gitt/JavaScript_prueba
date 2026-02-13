@@ -19,14 +19,27 @@ const password = ref('')
 const router = useRouter()
 
 function login() {
-  const users = JSON.parse(localStorage.getItem('users') || '[]')
-  const user = users.find(u => u.email === email.value && u.password === password.value)
-  if (!user) {
-    alert('Credenciales inválidas')
-    return
-  }
-  localStorage.setItem('auth', 'true')
-  alert('Login correcto')
+  fetch('http://localhost:3000/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email.value, password: password.value })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.error) {
+      alert(data.error)
+    } else {
+      localStorage.setItem('auth', 'true')
+      localStorage.setItem('user', JSON.stringify(data.user)) // Guardar info del usuario
+      alert(data.message)
+      // Redirigir al formulario principal
+      router.push('/')
+    }
+  })
+  .catch(err => {
+    console.error(err)
+    alert('Error al conectar con el servidor')
+  })
 }
 
 function goRegister() {
