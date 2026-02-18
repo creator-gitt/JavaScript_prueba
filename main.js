@@ -1,118 +1,66 @@
-document.addEventListener("DOMContentLoaded", () => {
-
-
-    frmAlumnos.addEventListener("submit", (e) => {
-        e.preventDefault();
-        guardarAlumno();
-    });
-    mostrarAlumnos();
+// =============================================
+// BASE DE DATOS (Dexie / IndexedDB)
+// =============================================
+const db = new Dexie('universidad');
+db.version(1).stores({
+    alumnos:      'idAlumno, codigo, nombre',
+    materias:     'idMateria, codigo, nombre',
+    docentes:     'idDocente, codigo, nombre',
+    matricula:    'idMatricula, codigo, nombreAlumno',
+    inscripciones:'idInscripcion, idMatricula, idMateria'
 });
-function mostrarAlumnos() {
-    let $tblAlumnos = document.querySelector("#tblAlumnos tbody"),
-        n = localStorage.length,
-        filas = "";
-    $tblAlumnos.innerHTML = "";
-    for (let i = 0; i < n; i++) {
-        let key = localStorage.key(i),
-            data = JSON.parse(localStorage.getItem(key));
-        filas += `
-                <tr onclick='modificarAlumno(${JSON.stringify(data)})'>
-                    <td>${data.codigo}</td>
-                    <td>${data.nombre}</td>
-                    <td>${data.direccion}</td>
-                    <td>${data.email}</td>
-                    <td>${data.telefono}</td>
-                    <td>
-                        <button type="button" class="btn btn-mod" onclick='modificarAlumno(${JSON.stringify(data)})'>MOD</button>
-                        <button type="button" class="btn btn-del" onclick='eliminarAlumno(${JSON.stringify(data)})'>DEL</button>
-                    </td>
-                </tr>
-            `;
-    }
-    $tblAlumnos.innerHTML = filas;
-}
-function modificarAlumno(alumno) {
-    txtCodigoAlumno.value = alumno.codigo;
-    txtnombreAlumno.value = alumno.nombre;
-    txtDireccionAlumno.value = alumno.direccion;
-    txtEmailAlumno.value = alumno.email;
-    txtTelefonoAlumno.value = alumno.telefono;
-    txtCodigoAlumno.disabled = true; // Deshabilitar código para que no se pueda cambiar
-}
 
-function eliminarAlumno(alumno) {
-    if (confirm("¿Deseas eliminar al alumno " + alumno.nombre + "?")) {
-        let id = "1"; // Buscar el ID correcto
-        for (let i = 0; i < localStorage.length; i++) {
-            let key = localStorage.key(i);
-            let datos = JSON.parse(localStorage.getItem(key));
-            if (datos.codigo === alumno.codigo) {
-                id = key;
-                break;
+// =============================================
+// APP VUE
+// =============================================
+const app = Vue.createApp({
+    data(){
+        return {
+            forms:{
+                alumnos:               { mostrar: false },
+                busqueda_alumnos:      { mostrar: false },
+                materias:              { mostrar: false },
+                busqueda_materias:     { mostrar: false },
+                docentes:              { mostrar: false },
+                busqueda_docentes:     { mostrar: false },
+                matricula:             { mostrar: false },
+                busqueda_matricula:    { mostrar: false },
+                inscripciones:         { mostrar: false },
+                busqueda_inscripciones:{ mostrar: false },
             }
-        }
-        localStorage.removeItem(id);
-        mostrarAlumnos();
-        limpiarFormulario();
-    }
-}
-function guardarAlumno() {
-    let esEdicion = txtCodigoAlumno.disabled; // Detectar si estamos en modo edición
-    let datos = {
-        codigo: txtCodigoAlumno.value,
-        nombre: txtnombreAlumno.value,
-        direccion: txtDireccionAlumno.value,
-        email: txtEmailAlumno.value,
-        telefono: txtTelefonoAlumno.value
-    };
-
-    if (esEdicion) {
-        // Modo edición: buscar y actualizar el registro existente
-        let idAEliminar = null;
-        for (let i = 0; i < localStorage.length; i++) {
-            let key = localStorage.key(i);
-            let alumnoGuardado = JSON.parse(localStorage.getItem(key));
-            if (alumnoGuardado.codigo === datos.codigo) {
-                idAEliminar = key;
-                break;
+        };
+    },
+    methods:{
+        abrirVentana(nombre){
+            // Cierra todos los paneles y abre solo el seleccionado
+            for(const key in this.forms){
+                this.forms[key].mostrar = false;
             }
-        }
-        if (idAEliminar) {
-            localStorage.removeItem(idAEliminar);
-            datos.id = idAEliminar; // Mantener el mismo ID
-        }
-    } else {
-        // Modo nuevo: verificar que no exista
-        let codigoDuplicado = buscarAlumno(datos.codigo);
-        if (codigoDuplicado) {
-            alert("El codigo del alumno ya existe, " + codigoDuplicado.nombre);
-            return;
-        }
-        datos.id = getId();
-    }
-
-    localStorage.setItem(datos.id, JSON.stringify(datos));
-    limpiarFormulario();
-}
-
-function getId() {
-    return localStorage.length + 1;
-}
-
-function limpiarFormulario() {
-    frmAlumnos.reset();
-    txtCodigoAlumno.disabled = false; // Habilitar el código para nuevos registros
-}
-
-function buscarAlumno(codigo = '') {
-    let n = localStorage.length;
-    for (let i = 0; i < n; i++) {
-        let key = localStorage.key(i);
-        let datos = JSON.parse(localStorage.getItem(key));
-        if (datos?.codigo && datos.codigo.trim().toUpperCase() == codigo.trim().toUpperCase()) {
-            return datos;
+            this.forms[nombre].mostrar = true;
+        },
+        buscar(refBusqueda, metodo){
+            this.$refs[refBusqueda][metodo]();
+        },
+        modificar(refForm, metodo, datos){
+            this.forms[refForm].mostrar  = true;
+            // Oculta el panel de búsqueda correspondiente
+            const busquedaKey = 'busqueda_' + refForm;
+            if(this.forms[busquedaKey]) this.forms[busquedaKey].mostrar = false;
+            this.$refs[refForm][metodo](datos);
         }
     }
-    return null;
-}
+});
 
+// Registro de componentes
+app.component('alumnos',                alumnos);
+app.component('busqueda_alumnos',       busqueda_alumnos);
+app.component('materias',               materias);
+app.component('busqueda_materias',      busqueda_materias);
+app.component('docentes',               docentes);
+app.component('busqueda_docentes',      busqueda_docentes);
+app.component('matricula',              matricula);
+app.component('busqueda_matricula',     busqueda_matricula);
+app.component('inscripciones',          inscripciones);
+app.component('busqueda_inscripciones', busqueda_inscripciones);
+
+app.mount('#app');
