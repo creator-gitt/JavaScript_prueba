@@ -14,121 +14,206 @@
 <body class="bg-light">
     <div id="app">
 
-        <!-- NAVBAR SUPERIOR -->
-        <nav class="navbar navbar-dark" style="background-color: #1a3a5c;">
-            <div class="container-fluid">
-                <span class="navbar-brand d-flex align-items-center gap-2 mb-0">
-                    <i class="bi bi-mortarboard-fill fs-4"></i>
-                    <span>
-                        <span class="fw-bold">SISTEMA ACADÉMICO</span>
-                        <small class="d-block text-white-50" style="font-size: 0.7rem; letter-spacing: 1px;">GESTIÓN
-                            UNIVERSITARIA</small>
+        <!-- ============================================================
+             PANTALLA LOGIN (sin sesión)
+             ============================================================ -->
+        <login v-if="!sesionActiva" @sesion-iniciada="onSesionIniciada"></login>
+
+        <!-- ============================================================
+             SISTEMA PRINCIPAL (con sesión activa)
+             ============================================================ -->
+        <template v-if="sesionActiva">
+
+            <!-- NAVBAR -->
+            <nav class="navbar navbar-dark" style="background-color:#1a3a5c;">
+                <div class="container-fluid">
+                    <span class="navbar-brand d-flex align-items-center gap-2 mb-0">
+                        <i class="bi bi-mortarboard-fill fs-4"></i>
+                        <span>
+                            <span class="fw-bold">SISTEMA ACADÉMICO</span>
+                            <small class="d-block text-white-50" style="font-size:0.7rem;letter-spacing:1px;">GESTIÓN
+                                UNIVERSITARIA</small>
+                        </span>
                     </span>
-                </span>
-                <span class="text-white-50 small d-none d-md-block">
-                    <i class="bi bi-calendar3 me-1"></i>Ciclo 2026
-                </span>
-            </div>
-        </nav>
 
-        <div class="container-fluid">
-            <div class="row">
-
-                <!-- SIDEBAR -->
-                <nav class="col-md-2 col-lg-2 d-md-block bg-white border-end shadow-sm min-vh-100 pt-3">
-                    <div class="px-2 mb-3">
-                        <p class="text-uppercase text-muted fw-semibold"
-                            style="font-size: 0.7rem; letter-spacing: 1px;">Módulos</p>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-white-50 small d-none d-md-inline">
+                            <i class="bi bi-calendar3 me-1"></i>Ciclo 2026
+                        </span>
+                        <!-- Badge de usuario con rol coloreado -->
+                        <span class="badge rounded-pill px-3 py-2" :class="rolBadgeClass" style="font-size:0.78rem;">
+                            <i class="bi me-1" :class="usuarioActual.tipo==='admin'   ? 'bi-shield-lock'
+                                     : usuarioActual.tipo==='docente' ? 'bi-person-workspace'
+                                     :                                  'bi-person-badge'"></i>
+                            {{ usuarioActual.nombre }}
+                            <span class="ms-1 opacity-75" style="font-size:0.7rem;">({{ rolLabel }})</span>
+                        </span>
+                        <button @click="cerrarSesion"
+                            class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1" title="Cerrar sesión">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span class="d-none d-md-inline">Salir</span>
+                        </button>
                     </div>
-                    <ul class="nav flex-column gap-1 px-2">
-                        <li class="nav-item">
-                            <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
-                                :class="forms.alumnos.mostrar ? 'active text-white' : 'text-secondary'"
-                                :style="forms.alumnos.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
-                                @click.prevent="abrirVentana('alumnos')">
-                                <i class="bi bi-person-badge"></i> Alumnos
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
-                                :class="forms.materias.mostrar ? 'active text-white' : 'text-secondary'"
-                                :style="forms.materias.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
-                                @click.prevent="abrirVentana('materias')">
-                                <i class="bi bi-book"></i> Materias
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
-                                :class="forms.docentes.mostrar ? 'active text-white' : 'text-secondary'"
-                                :style="forms.docentes.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
-                                @click.prevent="abrirVentana('docentes')">
-                                <i class="bi bi-person-workspace"></i> Docentes
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
-                                :class="forms.matricula.mostrar ? 'active text-white' : 'text-secondary'"
-                                :style="forms.matricula.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
-                                @click.prevent="abrirVentana('matricula')">
-                                <i class="bi bi-card-checklist"></i> Matrícula
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
-                                :class="forms.inscripciones.mostrar ? 'active text-white' : 'text-secondary'"
-                                :style="forms.inscripciones.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
-                                @click.prevent="abrirVentana('inscripciones')">
-                                <i class="bi bi-pencil-square"></i> Inscripciones
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
+                </div>
+            </nav>
 
-                <!-- CONTENIDO PRINCIPAL -->
-                <main class="col-md-10 col-lg-10 ms-sm-auto px-4 py-4">
+            <div class="container-fluid">
+                <div class="row">
 
-                    <!-- Pantalla de bienvenida -->
-                    <div v-if="!Object.values(forms).some(f => f.mostrar)" class="text-center mt-5 pt-4">
-                        <i class="bi bi-mortarboard text-secondary" style="font-size: 4rem; opacity: 0.3;"></i>
-                        <h5 class="text-muted mt-3 fw-normal">Seleccione un módulo del menú lateral para comenzar</h5>
-                    </div>
+                    <!-- SIDEBAR — items filtrados por rol -->
+                    <nav class="col-md-2 col-lg-2 d-md-block bg-white border-end shadow-sm min-vh-100 pt-3">
+                        <div class="px-2 mb-3">
+                            <p class="text-uppercase text-muted fw-semibold mb-1"
+                                style="font-size:0.7rem;letter-spacing:1px;">Módulos</p>
+                            <!-- Indicador visual del rol -->
+                            <span class="badge w-100 text-center" :class="rolBadgeClass" style="font-size:0.65rem;">
+                                {{ rolLabel }}
+                            </span>
+                        </div>
+                        <ul class="nav flex-column gap-1 px-2">
 
-                    <alumnos @buscar='buscar("busqueda_alumnos","obtenerAlumnos")' :forms="forms" ref="alumnos"
-                        v-show="forms.alumnos.mostrar"></alumnos>
-                    <busqueda_alumnos @modificar='modificar("alumnos","modificarAlumno", $event)' ref="busqueda_alumnos"
-                        v-show="forms.busqueda_alumnos.mostrar"></busqueda_alumnos>
+                            <!-- ADMIN ÚNICAMENTE -->
+                            <li class="nav-item" v-if="puedeVerAlumnos">
+                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
+                                    :class="forms.alumnos.mostrar ? 'active text-white' : 'text-secondary'"
+                                    :style="forms.alumnos.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
+                                    @click.prevent="abrirVentana('alumnos')">
+                                    <i class="bi bi-person-badge"></i> Alumnos
+                                </a>
+                            </li>
 
-                    <materias @buscar='buscar("busqueda_materias","obtenerMaterias")' :forms="forms" ref="materias"
-                        v-show="forms.materias.mostrar"></materias>
-                    <busqueda_materias @modificar='modificar("materias","modificarMateria", $event)'
-                        ref="busqueda_materias" v-show="forms.busqueda_materias.mostrar"></busqueda_materias>
+                            <!-- ADMIN Y DOCENTE -->
+                            <li class="nav-item" v-if="puedeVerMaterias">
+                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
+                                    :class="forms.materias.mostrar ? 'active text-white' : 'text-secondary'"
+                                    :style="forms.materias.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
+                                    @click.prevent="abrirVentana('materias')">
+                                    <i class="bi bi-book"></i> Materias
+                                </a>
+                            </li>
 
-                    <docentes @buscar='buscar("busqueda_docentes","obtenerDocentes")' :forms="forms" ref="docentes"
-                        v-show="forms.docentes.mostrar"></docentes>
-                    <busqueda_docentes @modificar='modificar("docentes","modificarDocente", $event)'
-                        ref="busqueda_docentes" v-show="forms.busqueda_docentes.mostrar"></busqueda_docentes>
+                            <!-- ADMIN ÚNICAMENTE -->
+                            <li class="nav-item" v-if="puedeVerDocentes">
+                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
+                                    :class="forms.docentes.mostrar ? 'active text-white' : 'text-secondary'"
+                                    :style="forms.docentes.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
+                                    @click.prevent="abrirVentana('docentes')">
+                                    <i class="bi bi-person-workspace"></i> Docentes
+                                </a>
+                            </li>
 
-                    <matricula @buscar='buscar("busqueda_matricula","obtenerMatriculas")' :forms="forms" ref="matricula"
-                        v-show="forms.matricula.mostrar"></matricula>
-                    <busqueda_matricula @modificar='modificar("matricula","modificarMatricula", $event)'
-                        ref="busqueda_matricula" v-show="forms.busqueda_matricula.mostrar"></busqueda_matricula>
+                            <!-- ADMIN Y ALUMNO -->
+                            <li class="nav-item" v-if="puedeVerMatricula">
+                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
+                                    :class="forms.matricula.mostrar ? 'active text-white' : 'text-secondary'"
+                                    :style="forms.matricula.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
+                                    @click.prevent="abrirVentana('matricula')">
+                                    <i class="bi bi-card-checklist"></i> Matrícula
+                                </a>
+                            </li>
 
-                    <inscripciones @buscar='buscar("busqueda_inscripciones","obtenerInscripciones")' :forms="forms"
-                        ref="inscripciones" v-show="forms.inscripciones.mostrar"></inscripciones>
-                    <busqueda_inscripciones @modificar='modificar("inscripciones","modificarInscripcion", $event)'
-                        ref="busqueda_inscripciones" v-show="forms.busqueda_inscripciones.mostrar">
-                    </busqueda_inscripciones>
+                            <!-- TODOS LOS ROLES -->
+                            <li class="nav-item" v-if="puedeVerInscripciones">
+                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
+                                    :class="forms.inscripciones.mostrar ? 'active text-white' : 'text-secondary'"
+                                    :style="forms.inscripciones.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
+                                    @click.prevent="abrirVentana('inscripciones')">
+                                    <i class="bi bi-pencil-square"></i> Inscripciones
+                                </a>
+                            </li>
 
-                </main>
+                            <!-- TODOS LOS ROLES -->
+                            <li class="nav-item" v-if="puedeVerNotas">
+                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
+                                    :class="forms.notas.mostrar ? 'active text-white' : 'text-secondary'"
+                                    :style="forms.notas.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
+                                    @click.prevent="abrirVentana('solicitudes')">
+                                    <i class="bi bi-journal-check"></i> Notas
+                                </a>
+                            </li>
+
+                            <!-- ADMIN ÚNICAMENTE -->
+                            <li class="nav-item" v-if="puedeVerSolicitudes">
+                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
+                                    :class="forms.solicitudes.mostrar ? 'active text-white' : 'text-secondary'"
+                                    :style="forms.solicitudes.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
+                                    @click.prevent="abrirVentana('solicitudes')">
+                                    <i class="bi bi-person-plus-fill"></i> Solicitudes
+                                    <!-- Badge de pendientes (opcional, requeriría computed en main) -->
+                                </a>
+                            </li>
+
+                        </ul>
+                    </nav>
+
+                    <!-- CONTENIDO PRINCIPAL -->
+                    <main class="col-md-10 col-lg-10 ms-sm-auto px-4 py-4">
+
+                        <!-- Bienvenida -->
+                        <div v-if="!Object.values(forms).some(f => f.mostrar)" class="text-center mt-5 pt-4">
+                            <i class="bi bi-mortarboard text-secondary" style="font-size:4rem;opacity:0.3;"></i>
+                            <h5 class="text-muted mt-3 fw-normal">
+                                Bienvenido/a, <strong>{{ usuarioActual.nombre }}</strong>
+                                <span class="badge ms-2" :class="rolBadgeClass">{{ rolLabel }}</span>
+                            </h5>
+                            <p class="text-muted small">Seleccione un módulo del menú lateral para comenzar.</p>
+                        </div>
+
+                        <alumnos @buscar='buscar("busqueda_alumnos","obtenerAlumnos")' :forms="forms" ref="alumnos"
+                            v-show="forms.alumnos.mostrar"></alumnos>
+                        <busqueda_alumnos @modificar='modificar("alumnos","modificarAlumno",$event)'
+                            ref="busqueda_alumnos" v-show="forms.busqueda_alumnos.mostrar"></busqueda_alumnos>
+
+                        <materias @buscar='buscar("busqueda_materias","obtenerMaterias")' :forms="forms" ref="materias"
+                            v-show="forms.materias.mostrar"></materias>
+                        <busqueda_materias @modificar='modificar("materias","modificarMateria",$event)'
+                            ref="busqueda_materias" v-show="forms.busqueda_materias.mostrar"></busqueda_materias>
+
+                        <docentes @buscar='buscar("busqueda_docentes","obtenerDocentes")' :forms="forms" ref="docentes"
+                            v-show="forms.docentes.mostrar"></docentes>
+                        <busqueda_docentes @modificar='modificar("docentes","modificarDocente",$event)'
+                            ref="busqueda_docentes" v-show="forms.busqueda_docentes.mostrar"></busqueda_docentes>
+
+                        <matricula @buscar='buscar("busqueda_matricula","obtenerMatriculas")' :forms="forms"
+                            ref="matricula" v-show="forms.matricula.mostrar"></matricula>
+                        <busqueda_matricula @modificar='modificar("matricula","modificarMatricula",$event)'
+                            ref="busqueda_matricula" v-show="forms.busqueda_matricula.mostrar"></busqueda_matricula>
+
+                        <inscripciones @buscar='buscar("busqueda_inscripciones","obtenerInscripciones")' :forms="forms"
+                            ref="inscripciones" v-show="forms.inscripciones.mostrar"></inscripciones>
+                        <busqueda_inscripciones @modificar='modificar("inscripciones","modificarInscripcion",$event)'
+                            ref="busqueda_inscripciones" v-show="forms.busqueda_inscripciones.mostrar">
+                        </busqueda_inscripciones>
+
+                        <!-- Notas: docente/admin ingresan, alumno consulta -->
+                        <notas_docente v-if="usuarioActual.tipo !== 'alumno'" :usuarioActual="usuarioActual"
+                            v-show="forms.notas.mostrar">
+                        </notas_docente>
+                        <notas_alumno v-if="usuarioActual.tipo === 'alumno'" :usuarioActual="usuarioActual"
+                            v-show="forms.notas.mostrar">
+                        </notas_alumno>
+
+                        <!-- Solicitudes de cuenta (Admin) -->
+                        <solicitudes_admin v-if="usuarioActual.tipo === 'admin'" v-show="forms.solicitudes.mostrar">
+                        </solicitudes_admin>
+
+                    </main>
+                </div>
             </div>
-        </div>
 
+        </template>
     </div>
 
     <script src="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/alertify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dexie/4.2.0/dexie.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- DB primero: disponible para todos los componentes -->
+    <script src="registro-alumnos/db.js"></script>
+
+    <!-- Login (requiere db y sha256) -->
+    <script src="registro-alumnos/login.js"></script>
 
     <script src="registro-alumnos/alumnos.js"></script>
     <script src="registro-alumnos/busqueda_alumnos.js"></script>
@@ -144,6 +229,11 @@
 
     <script src="registro-alumnos/inscripciones.js"></script>
     <script src="registro-alumnos/busqueda_inscripciones.js"></script>
+
+    <script src="registro-alumnos/notas_docente.js"></script>
+    <script src="registro-alumnos/notas_alumno.js"></script>
+
+    <script src="registro-alumnos/solicitudes_admin.js"></script>
 
     <script src="main.js"></script>
 </body>
