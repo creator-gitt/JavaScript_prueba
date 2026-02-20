@@ -74,42 +74,42 @@ const busqueda_inscripciones = {
     template: `
         <div>
             <div class="d-flex align-items-center mb-3 border-bottom pb-2">
-                <i class="bi bi-search me-2 fs-5 text-secondary"></i>
-                <h5 class="mb-0 fw-semibold">Búsqueda de Inscripciones</h5>
+                <i class="bi bi-search me-2 fs-5 text-body-secondary"></i>
+                <h5 class="mb-0 fw-semibold text-body">Búsqueda de Inscripciones</h5>
             </div>
 
             <div class="mb-3" style="max-width: 340px;">
                 <input type="search" @keyup="obtenerInscripciones()" @search="obtenerInscripciones()" v-model="buscar"
-                    placeholder="Buscar por nombre de alumno..." class="form-control form-control-sm">
+                    placeholder="Buscar por nombre de alumno..." class="form-control form-control-sm bg-transparent">
             </div>
 
             <!-- Sin resultados -->
-            <div v-if="alumnosAgrupados.length === 0" class="text-center text-muted py-4 small">
+            <div v-if="alumnosAgrupados.length === 0" class="text-center text-body-secondary py-4 small">
                 <i class="bi bi-inbox fs-4 d-block mb-1 opacity-50"></i>Sin resultados
             </div>
 
             <!-- Tarjeta por alumno -->
             <div v-for="grupo in alumnosAgrupados" :key="grupo.idMatricula" class="mb-2">
                 <!-- Fila principal: nombre + cantidad de materias -->
-                <div class="d-flex align-items-center px-3 py-2 rounded border bg-white"
+                <div class="d-flex align-items-center px-3 py-2 rounded border border-secondary-subtle bg-body-tertiary"
                     style="cursor:pointer; transition: box-shadow .15s;"
                     @mouseenter="$event.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,.08)'"
                     @mouseleave="$event.currentTarget.style.boxShadow='none'"
                     @click="toggleExpandido(grupo.idMatricula)">
-
+                    
                     <!-- Ícono chevron -->
-                    <i class="bi me-2 text-secondary"
+                    <i class="bi me-2 text-body-secondary"
                         :class="expandido === grupo.idMatricula ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
 
                     <!-- Nombre del alumno -->
                     <div class="flex-grow-1">
-                        <span class="fw-semibold small">{{ grupo.alumno }}</span>
-                        <span class="text-muted small ms-2">· Ciclo {{ grupo.ciclo }}</span>
+                        <span class="fw-semibold small text-body">{{ grupo.alumno }}</span>
+                        <span class="text-body-secondary small ms-2">· Ciclo {{ grupo.ciclo }}</span>
                     </div>
 
                     <!-- Badge de cantidad de materias -->
-                    <span class="badge rounded-pill me-2"
-                        style="background-color:#1a3a5c; font-size:.75rem;">
+                    <span class="badge rounded-pill me-2 shadow-sm"
+                        style="background-color:#1a3a5c; font-size:.75rem; border: 1px solid rgba(255,255,255,0.1);">
                         <i class="bi bi-book me-1"></i>{{ grupo.materias.length }} materia{{ grupo.materias.length !== 1 ? 's' : '' }}
                     </span>
 
@@ -123,21 +123,21 @@ const busqueda_inscripciones = {
 
                 <!-- Detalle expandido: tabla de materias -->
                 <div v-if="expandido === grupo.idMatricula"
-                    class="border border-top-0 rounded-bottom px-3 pt-2 pb-1 bg-white">
+                    class="border border-secondary-subtle border-top-0 rounded-bottom px-3 pt-2 pb-1 bg-body-secondary bg-opacity-10">
                     <table class="table table-sm table-hover align-middle mb-1">
                         <thead>
-                            <tr>
-                                <th class="text-muted small text-uppercase fw-semibold">#</th>
-                                <th class="text-muted small text-uppercase fw-semibold">Materia</th>
-                                <th class="text-muted small text-uppercase fw-semibold">Fecha</th>
+                            <tr class="border-bottom border-secondary-subtle">
+                                <th class="text-body-secondary small text-uppercase fw-bold">#</th>
+                                <th class="text-body-secondary small text-uppercase fw-bold">Materia</th>
+                                <th class="text-body-secondary small text-uppercase fw-bold">Fecha</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(ins, idx) in grupo.materias" :key="ins.idInscripcion">
-                                <td class="small text-muted">{{ idx + 1 }}</td>
-                                <td class="small fw-semibold">{{ ins.materia }}</td>
-                                <td class="small text-muted">{{ ins.fecha }}</td>
+                            <tr v-for="(ins, idx) in grupo.materias" :key="ins.idInscripcion" class="border-transparent">
+                                <td class="small text-body-secondary">{{ idx + 1 }}</td>
+                                <td class="small fw-semibold text-body">{{ ins.materia }}</td>
+                                <td class="small text-body-secondary">{{ ins.fecha }}</td>
                                 <td>
                                     <button class="btn btn-outline-danger btn-sm py-0 px-2"
                                         @click.stop="eliminarInscripcion(ins, $event)">

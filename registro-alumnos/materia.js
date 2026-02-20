@@ -56,36 +56,36 @@ const materias = {
     template: `
         <div>
             <div class="d-flex align-items-center mb-3 border-bottom pb-2">
-                <i class="bi bi-book me-2 fs-5 text-secondary"></i>
-                <h5 class="mb-0 fw-semibold">Registro de Materias</h5>
+                <i class="bi bi-book me-2 fs-5 text-body-secondary"></i>
+                <h5 class="mb-0 fw-semibold text-body">Registro de Materias</h5>
                 <span v-if="accion=='modificar'" class="badge bg-warning text-dark ms-2">Editando</span>
             </div>
             <form id="frmMaterias" @submit.prevent="guardarMateria" @reset.prevent="limpiarFormulario">
-                <div class="card border-0 shadow-sm" style="max-width: 420px;">
+                <div class="card border-0 shadow-sm bg-body-tertiary" style="max-width: 420px;">
                     <div class="card-body p-4">
                         <div class="mb-3 row align-items-center">
-                            <label class="col-sm-3 col-form-label text-muted small fw-semibold text-uppercase">Código</label>
+                            <label class="col-sm-3 col-form-label text-body-secondary small fw-bold text-uppercase">Código</label>
                             <div class="col-sm-4">
-                                <input placeholder="Ej. MAT-101" required v-model="materia.codigo" type="text" class="form-control form-control-sm">
+                                <input placeholder="Ej. MAT-101" required v-model="materia.codigo" type="text" class="form-control form-control-sm bg-transparent">
                             </div>
                         </div>
                         <div class="mb-3 row align-items-center">
-                            <label class="col-sm-3 col-form-label text-muted small fw-semibold text-uppercase">Nombre</label>
+                            <label class="col-sm-3 col-form-label text-body-secondary small fw-bold text-uppercase">Nombre</label>
                             <div class="col-sm-8">
-                                <input placeholder="Nombre de la materia" required v-model="materia.nombre" type="text" class="form-control form-control-sm">
+                                <input placeholder="Nombre de la materia" required v-model="materia.nombre" type="text" class="form-control form-control-sm bg-transparent">
                             </div>
                         </div>
                         <div class="mb-1 row align-items-center">
-                            <label class="col-sm-3 col-form-label text-muted small fw-semibold text-uppercase">UV</label>
+                            <label class="col-sm-3 col-form-label text-body-secondary small fw-bold text-uppercase">UV</label>
                             <div class="col-sm-3">
-                                <input placeholder="0" required v-model="materia.uv" type="number" min="1" class="form-control form-control-sm">
+                                <input placeholder="0" required v-model="materia.uv" type="number" min="1" class="form-control form-control-sm bg-transparent">
                             </div>
                             <div class="col-sm-5">
-                                <small class="text-muted">Unidades valorativas</small>
+                                <small class="text-body-secondary">Unidades valorativas</small>
                             </div>
                         </div>
                     </div>
-                    <div class="card-footer bg-white border-top d-flex gap-2 px-4 py-3">
+                    <div class="card-footer bg-transparent border-top d-flex gap-2 px-4 py-3">
                         <button type="submit" class="btn btn-sm px-3" style="background-color:#1a3a5c; color:white;">
                             <i class="bi bi-save me-1"></i>Guardar
                         </button>

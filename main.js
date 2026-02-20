@@ -1,103 +1,253 @@
 // =============================================
-// APP VUE  (la DB está en registro-alumnos/db.js)
+// BASE DE DATOS (Dexie / IndexedDB)
+// =============================================
+const db = new Dexie('universidad');
+db.version(1).stores({
+    alumnos: 'idAlumno, codigo, nombre',
+    materias: 'idMateria, codigo, nombre',
+    docentes: 'idDocente, codigo, nombre',
+    matricula: 'idMatricula, codigo, nombreAlumno',
+    inscripciones: 'idInscripcion, idMatricula, idMateria'
+});
+db.version(2).stores({
+    alumnos: 'idAlumno, codigo, nombre',
+    materias: 'idMateria, codigo, nombre',
+    docentes: 'idDocente, codigo, nombre',
+    matricula: 'idMatricula, codigo, nombreAlumno',
+    inscripciones: 'idInscripcion, idMatricula, idMateria',
+    usuarios: '++id, username, rol'
+});
+db.version(3).stores({
+    alumnos: 'idAlumno, codigo, nombre',
+    materias: 'idMateria, codigo, nombre',
+    docentes: 'idDocente, codigo, nombre',
+    matricula: 'idMatricula, codigo, nombreAlumno',
+    inscripciones: 'idInscripcion, idMatricula, idMateria',
+    usuarios: '++id, username, codigo, email, rol'
+});
+db.version(4).stores({
+    alumnos: 'idAlumno, codigo, nombre, carrera, estado',
+    materias: 'idMateria, codigo, nombre, docenteId, estado',
+    docentes: 'idDocente, codigo, nombre, especialidad, estado',
+    matricula: 'idMatricula, codigo, nombreAlumno, idAlumno, periodoId, estado',
+    inscripciones: 'idInscripcion, idMatricula, idMateria, idAlumno',
+    periodos: '++idPeriodo, año, ciclo, estado',
+    usuarios: '++id, username, codigo, email, rol, estado'
+});
+db.version(5).stores({
+    alumnos: 'idAlumno, codigo, nombre, carrera, carreraId, estado',
+    materias: 'idMateria, codigo, nombre, docenteId, carreraId, carrera, estado',
+    docentes: 'idDocente, codigo, nombre, especialidad, estado',
+    matricula: 'idMatricula, codigo, nombreAlumno, idAlumno, periodoId, estado',
+    inscripciones: 'idInscripcion, idMatricula, idMateria, idAlumno',
+    periodos: '++idPeriodo, año, ciclo, estado',
+    carreras: '++idCarrera, codigo, nombre, estado',
+    evaluaciones: '++id, idInscripcion, idMateria, computo, estado',
+    usuarios: '++id, username, codigo, email, rol, estado'
+});
+db.version(6).stores({
+    alumnos: 'idAlumno, codigo, nombre, carrera, carreraId, foto, estado',
+    materias: 'idMateria, codigo, nombre, docenteId, carreraId, carrera, estado',
+    docentes: 'idDocente, codigo, nombre, especialidad, foto, estado',
+    matricula: 'idMatricula, codigo, nombreAlumno, idAlumno, periodoId, estado',
+    inscripciones: 'idInscripcion, idMatricula, idMateria, idAlumno',
+    periodos: '++idPeriodo, año, ciclo, estado',
+    carreras: '++idCarrera, codigo, nombre, estado',
+    evaluaciones: '++id, idInscripcion, idMateria, computo, estado',
+    usuarios: '++id, username, codigo, email, rol, estado'
+});
+db.version(7).stores({
+    alumnos: 'idAlumno, codigo, nombre, carrera, carreraId, foto, estado',
+    materias: 'idMateria, codigo, nombre, docenteId, carreraId, carrera, estado',
+    docentes: 'idDocente, codigo, nombre, especialidad, foto, estado',
+    matricula: 'idMatricula, codigo, nombreAlumno, idAlumno, periodoId, estado',
+    inscripciones: 'idInscripcion, idMatricula, idMateria, idAlumno',
+    periodos: '++idPeriodo, año, ciclo, estado',
+    carreras: '++idCarrera, codigo, nombre, estado',
+    evaluaciones: '++id, idInscripcion, idMateria, computo, estado',
+    usuarios: '++id, username, codigo, email, rol, estado',
+    solicitudes: '++id, tipo, nombre, codigo, fecha, estado'
+});
+// v8: Corrige idAlumno/idDocente/etc. a auto-increment (++), necesario para add() sin clave manual
+db.version(8).stores({
+    alumnos: '++idAlumno, codigo, nombre, carrera, carreraId, foto, estado, tokenAcceso',
+    materias: '++idMateria, codigo, nombre, docenteId, carreraId, carrera, estado',
+    docentes: '++idDocente, codigo, nombre, especialidad, foto, estado, tokenAcceso',
+    matricula: '++idMatricula, codigo, nombreAlumno, idAlumno, periodoId, estado',
+    inscripciones: '++idInscripcion, idMatricula, idMateria, idAlumno',
+    periodos: '++idPeriodo, año, ciclo, estado',
+    carreras: '++idCarrera, codigo, nombre, estado',
+    evaluaciones: '++id, idInscripcion, idMateria, computo, estado',
+    usuarios: '++id, username, codigo, email, rol, estado',
+    solicitudes: '++id, tipo, nombre, codigo, fecha, estado'
+});
+// v9: Schema relacional — todos los registros vinculados por FK numérico
+db.version(9).stores({
+    usuarios: '++id, username, codigo, email, rol, estado',
+    alumnos: '++idAlumno, codigo, nombre, usuarioId, carreraId, foto, estado, tokenAcceso',
+    docentes: '++idDocente, codigo, nombre, usuarioId, especialidad, foto, estado, tokenAcceso',
+    carreras: '++idCarrera, codigo, nombre, facultad, estado',
+    materias: '++idMateria, codigo, nombre, docenteId, carreraId, estado',
+    periodos: '++idPeriodo, año, ciclo, estado',
+    matricula: '++idMatricula, codigo, alumnoId, periodoId, carreraId, estado',
+    inscripciones: '++idInscripcion, matriculaId, materiaId, estado',
+    evaluaciones: '++id, inscripcionId, estado',
+    solicitudes: '++id, tipo, nombre, codigo, fecha, estado'
+});
+// v10: Agregar campos de Fecha de Nacimiento, Género y DUI (indexado)
+db.version(10).stores({
+    alumnos: '++idAlumno, codigo, nombre, dui, usuarioId, carreraId, foto, estado, tokenAcceso',
+    docentes: '++idDocente, codigo, nombre, dui, usuarioId, especialidad, foto, estado, tokenAcceso'
+});
+
+// =============================================
+// APERTURA SEGURA DE BD (auto-recover on schema error)
+// =============================================
+db.open().catch(err => {
+    const msg = err.message || '';
+    if (
+        msg.includes('primary key') ||
+        msg.includes('VersionError') ||
+        msg.includes('upgrade') ||
+        err.name === 'VersionError'
+    ) {
+        console.warn('[DB] Error de migración — borrando BD antigua y recargando...', err);
+        // Notificar al usuario antes de borrar
+        if (confirm(
+            '⚠️ La base de datos del sistema necesita actualizarse a una nueva versión.\n\n' +
+            'Los datos existentes no pueden migrarse automáticamente.\n' +
+            '¿Deseas limpiar la base de datos y continuar?\n\n' +
+            '(Después podrás restaurar datos de prueba desde el panel Admin)'
+        )) {
+            indexedDB.deleteDatabase('universidad');
+            location.reload();
+        }
+    } else {
+        console.error('[DB] Error inesperado al abrir la BD:', err);
+    }
+});
+
+// =============================================
+// APP VUE
 // =============================================
 const app = Vue.createApp({
     data() {
         return {
-            // Sesión activa
-            sesionActiva: false,
-            usuarioActual: null,   // { tipo, id, nombre, email }
-
+            darkMode: false,
+            sesion: {
+                autenticado: false,
+                username: '',
+                rol: '',
+                foto: ''
+            },
             forms: {
                 alumnos: { mostrar: false },
                 busqueda_alumnos: { mostrar: false },
                 materias: { mostrar: false },
                 busqueda_materias: { mostrar: false },
-                docentes: { mostrar: false },
-                busqueda_docentes: { mostrar: false },
                 matricula: { mostrar: false },
                 busqueda_matricula: { mostrar: false },
                 inscripciones: { mostrar: false },
                 busqueda_inscripciones: { mostrar: false },
-                notas: { mostrar: false },
-                solicitudes: { mostrar: false },
+                mis_notas: { mostrar: false },
+                mi_perfil: { mostrar: false },
             }
         };
     },
-
-    // ── Crea la cuenta admin por defecto si no existe ──────────────────────
-    async mounted() {
-        const adminExiste = await db.usuarios.where('tipo').equals('admin').first();
-        if (!adminExiste) {
-            const hash = await sha256('Admin1234');
-            await db.usuarios.add({
-                email: 'admin@universidad.edu',
-                tipo: 'admin',
-                clave: hash,
-                creadoEn: new Date().toISOString()
-            });
-            console.info('[Sistema] Cuenta admin creada → admin@universidad.edu / Admin1234');
+    async created() {
+        // Cargar preferencia de Dark Mode
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            this.darkMode = true;
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
+        } else {
+            document.documentElement.setAttribute('data-bs-theme', 'light');
         }
-    },
 
-    computed: {
-        // ── Qué módulos puede ver el usuario según su rol ──────────────────
-        puedeVerAlumnos() {
-            return this.usuarioActual?.tipo === 'admin';
-        },
-        puedeVerDocentes() {
-            return this.usuarioActual?.tipo === 'admin';
-        },
-        puedeVerMaterias() {
-            return ['admin', 'docente'].includes(this.usuarioActual?.tipo);
-        },
-        puedeVerMatricula() {
-            return ['admin', 'alumno'].includes(this.usuarioActual?.tipo);
-        },
-        puedeVerInscripciones() {
-            return ['admin', 'docente', 'alumno'].includes(this.usuarioActual?.tipo);
-        },
-        puedeVerNotas() {
-            return ['admin', 'docente', 'alumno'].includes(this.usuarioActual?.tipo);
-        },
-        puedeVerSolicitudes() {
-            return this.usuarioActual?.tipo === 'admin';
-        },
-        // Ícono y badge de rol para el navbar
-        rolLabel() {
-            const labels = { admin: 'Administrador', docente: 'Docente', alumno: 'Alumno' };
-            return labels[this.usuarioActual?.tipo] ?? '';
-        },
-        rolBadgeClass() {
-            const clases = { admin: 'bg-danger', docente: 'bg-primary', alumno: 'bg-success' };
-            return clases[this.usuarioActual?.tipo] ?? 'bg-secondary';
-        }
-    },
+        // Restaurar sesión desde sessionStorage al recargar la página
+        try {
+            const stored = sessionStorage.getItem('sesionUniversidad');
+            if (stored) {
+                const s = JSON.parse(stored);
+                if (s && s.autenticado && s.rol !== 'Admin') {
+                    this.sesion.autenticado = true;
+                    this.sesion.username = s.username;
+                    this.sesion.rol = s.rol;
 
+                    // SIEMPRE cargar la foto desde la BD
+                    if (s.rol === 'Alumno' && s.codigo) {
+                        const alumno = await db.alumnos.where('codigo').equals(s.codigo).first();
+                        if (alumno) {
+                            if (alumno.estado === 'inactivo') {
+                                console.warn('Sesión cerrada: Alumno inactivo.');
+                                this.cerrarSesion();
+                                return;
+                            }
+                            if (alumno.foto) this.sesion.foto = alumno.foto;
+                        }
+                    }
+                }
+            }
+        } catch (e) { /* sesión corrupta, ignorar */ }
+    },
     methods: {
-        // Recibe el evento del componente login al autenticarse
-        onSesionIniciada(usuario) {
-            this.usuarioActual = usuario;
-            this.sesionActiva = true;
-        },
-        // Cierra la sesión y regresa al login
-        cerrarSesion() {
-            this.sesionActiva = false;
-            this.usuarioActual = null;
-            for (const key in this.forms) this.forms[key].mostrar = false;
-        },
         abrirVentana(nombre) {
-            for (const key in this.forms) this.forms[key].mostrar = false;
-            this.forms[nombre].mostrar = true;
+            // Cierra todos los paneles
+            Object.keys(this.forms).forEach(key => {
+                this.forms[key].mostrar = false;
+            });
+            // Abre solo el seleccionado
+            if (this.forms[nombre]) {
+                this.forms[nombre].mostrar = true;
+            }
         },
         buscar(refBusqueda, metodo) {
             this.$refs[refBusqueda][metodo]();
         },
         modificar(refForm, metodo, datos) {
             this.forms[refForm].mostrar = true;
+            // Oculta el panel de búsqueda correspondiente
             const busquedaKey = 'busqueda_' + refForm;
             if (this.forms[busquedaKey]) this.forms[busquedaKey].mostrar = false;
+
+            // Asegurar que mi_perfil está cerrado si abrimos otro form (aunque el loop arriba ya lo hace, es bueno asegurar)
+            this.forms.mi_perfil.mostrar = false;
+
             this.$refs[refForm][metodo](datos);
+        },
+        async loginExitoso({ username, rol, codigo }) {
+            this.sesion.autenticado = true;
+            this.sesion.username = username;
+            this.sesion.rol = rol;
+            this.sesion.foto = '';
+
+            if (rol === 'Alumno' && codigo) {
+                const alumno = await db.alumnos.where('codigo').equals(codigo).first();
+                if (alumno && alumno.foto) this.sesion.foto = alumno.foto;
+            }
+
+            // NO guardar la foto en sessionStorage
+            sessionStorage.setItem('sesionUniversidad', JSON.stringify({ autenticado: true, username, rol, codigo: codigo || '' }));
+        },
+        cerrarSesion() {
+            sessionStorage.removeItem('sesionUniversidad');
+            this.sesion.autenticado = false;
+            this.sesion.username = '';
+            this.sesion.rol = '';
+            this.sesion.foto = '';
+            // Cierra todos los paneles abiertos
+            for (const key in this.forms) {
+                this.forms[key].mostrar = false;
+            }
+        },
+        actualizarFotoSesion(foto) {
+            this.sesion.foto = foto;
+        },
+        toggleDarkMode() {
+            this.darkMode = !this.darkMode;
+            const theme = this.darkMode ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-bs-theme', theme);
+            localStorage.setItem('theme', theme);
         }
     }
 });
@@ -108,14 +258,11 @@ app.component('alumnos', alumnos);
 app.component('busqueda_alumnos', busqueda_alumnos);
 app.component('materias', materias);
 app.component('busqueda_materias', busqueda_materias);
-app.component('docentes', docentes);
-app.component('busqueda_docentes', busqueda_docentes);
 app.component('matricula', matricula);
 app.component('busqueda_matricula', busqueda_matricula);
 app.component('inscripciones', inscripciones);
 app.component('busqueda_inscripciones', busqueda_inscripciones);
-app.component('notas_docente', notas_docente);
-app.component('notas_alumno', notas_alumno);
-app.component('solicitudes_admin', solicitudes_admin);
+app.component('mis_notas', misNotas);
+app.component('mi_perfil', miPerfil);
 
 app.mount('#app');

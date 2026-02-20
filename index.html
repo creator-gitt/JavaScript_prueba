@@ -1,55 +1,57 @@
 <!doctype html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sistema Académico — Universidad</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/alertify.min.css" />
-    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/themes/default.min.css" />
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/alertify.min.css"/>
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/themes/default.min.css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
 </head>
-
-<body class="bg-light">
+<body>
     <div id="app">
 
-        <!-- ============================================================
-             PANTALLA LOGIN (sin sesión)
-             ============================================================ -->
-        <login v-if="!sesionActiva" @sesion-iniciada="onSesionIniciada"></login>
+        <!-- ═══ PANTALLA LOGIN (sin sesión) ═══ -->
+        <login v-if="!sesion.autenticado" @login-exitoso="loginExitoso"></login>
 
-        <!-- ============================================================
-             SISTEMA PRINCIPAL (con sesión activa)
-             ============================================================ -->
-        <template v-if="sesionActiva">
+        <!-- ═══ APP PRINCIPAL (con sesión) ═══ -->
+        <template v-else>
 
-            <!-- NAVBAR -->
-            <nav class="navbar navbar-dark" style="background-color:#1a3a5c;">
-                <div class="container-fluid">
-                    <span class="navbar-brand d-flex align-items-center gap-2 mb-0">
-                        <i class="bi bi-mortarboard-fill fs-4"></i>
+            <!-- NAVBAR SUPERIOR -->
+            <nav class="navbar border-bottom bg-body-tertiary px-3 shadow-sm" style="height: 56px;">
+                <div class="container-fluid px-0">
+                    <div class="navbar-brand d-flex align-items-center gap-2 mb-0" style="padding: 0;">
+                        <i class="bi bi-mortarboard-fill fs-4 text-primary"></i>
                         <span>
-                            <span class="fw-bold">SISTEMA ACADÉMICO</span>
-                            <small class="d-block text-white-50" style="font-size:0.7rem;letter-spacing:1px;">GESTIÓN
-                                UNIVERSITARIA</small>
+                            <span class="fw-bold text-body" style="font-size: 1.1rem; line-height: 1.2;">SISTEMA ACADÉMICO</span>
+                            <small class="d-block text-body-secondary" style="font-size: 0.7rem; letter-spacing: 1px; line-height: 1;">GESTIÓN UNIVERSITARIA</small>
                         </span>
-                    </span>
+                    </div>
 
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="text-white-50 small d-none d-md-inline">
+                    <!-- Usuario logueado -->
+                    <div class="d-flex align-items-center gap-3">
+                        <button class="btn btn-sm btn-outline-secondary border-0" @click="toggleDarkMode" title="Alternar Modo Oscuro">
+                            <i :class="darkMode ? 'bi bi-sun-fill text-warning' : 'bi bi-moon-stars-fill'"></i>
+                        </button>
+                        <span class="text-body-secondary small d-none d-md-flex align-items-center gap-1">
                             <i class="bi bi-calendar3 me-1"></i>Ciclo 2026
                         </span>
-                        <!-- Badge de usuario con rol coloreado -->
-                        <span class="badge rounded-pill px-3 py-2" :class="rolBadgeClass" style="font-size:0.78rem;">
-                            <i class="bi me-1" :class="usuarioActual.tipo==='admin'   ? 'bi-shield-lock'
-                                     : usuarioActual.tipo==='docente' ? 'bi-person-workspace'
-                                     :                                  'bi-person-badge'"></i>
-                            {{ usuarioActual.nombre }}
-                            <span class="ms-1 opacity-75" style="font-size:0.7rem;">({{ rolLabel }})</span>
+                        <span class="d-flex align-items-center gap-2">
+                            <span :class="sesion.rol === 'Docente' ? 'badge bg-success bg-opacity-10 text-success border border-success' : 'badge bg-primary bg-opacity-10 text-primary border border-primary'"
+                                  class="d-flex align-items-center gap-1 px-2 py-1">
+                                <i :class="sesion.rol === 'Docente' ? 'bi bi-person-workspace' : 'bi bi-person-badge'"></i>
+                                {{ sesion.rol }}
+                            </span>
+                            <span class="text-body small fw-semibold d-flex align-items-center">
+                                <img v-if="sesion.foto" :src="sesion.foto" class="rounded-circle me-2 border border-secondary-subtle" style="width:26px;height:26px;object-fit:cover;">
+                                <i v-else class="bi bi-person-circle me-1 text-primary"></i>
+                                {{ sesion.username }}
+                            </span>
                         </span>
                         <button @click="cerrarSesion"
-                            class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1" title="Cerrar sesión">
+                                class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 px-3">
                             <i class="bi bi-box-arrow-right"></i>
                             <span class="d-none d-md-inline">Salir</span>
                         </button>
@@ -60,142 +62,82 @@
             <div class="container-fluid">
                 <div class="row">
 
-                    <!-- SIDEBAR — items filtrados por rol -->
-                    <nav class="col-md-2 col-lg-2 d-md-block bg-white border-end shadow-sm min-vh-100 pt-3">
+                    <!-- SIDEBAR -->
+                    <nav class="col-md-2 col-lg-2 d-md-block bg-body-tertiary border-end min-vh-100 pt-3">
                         <div class="px-2 mb-3">
-                            <p class="text-uppercase text-muted fw-semibold mb-1"
-                                style="font-size:0.7rem;letter-spacing:1px;">Módulos</p>
-                            <!-- Indicador visual del rol -->
-                            <span class="badge w-100 text-center" :class="rolBadgeClass" style="font-size:0.65rem;">
-                                {{ rolLabel }}
-                            </span>
+                            <p class="text-uppercase text-body-secondary fw-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Módulos</p>
                         </div>
                         <ul class="nav flex-column gap-1 px-2">
-
-                            <!-- ADMIN ÚNICAMENTE -->
-                            <li class="nav-item" v-if="puedeVerAlumnos">
-                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
-                                    :class="forms.alumnos.mostrar ? 'active text-white' : 'text-secondary'"
-                                    :style="forms.alumnos.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
-                                    @click.prevent="abrirVentana('alumnos')">
+                            <li class="nav-item">
+                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2 transition-all"
+                                   :class="forms.alumnos.mostrar ? 'active bg-primary bg-opacity-10 text-primary fw-bold border border-primary border-opacity-25' : 'text-body-secondary'"
+                                   href="#" @click.prevent="abrirVentana('alumnos')">
                                     <i class="bi bi-person-badge"></i> Alumnos
                                 </a>
                             </li>
-
-                            <!-- ADMIN Y DOCENTE -->
-                            <li class="nav-item" v-if="puedeVerMaterias">
-                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
-                                    :class="forms.materias.mostrar ? 'active text-white' : 'text-secondary'"
-                                    :style="forms.materias.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
-                                    @click.prevent="abrirVentana('materias')">
+                            <li class="nav-item">
+                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2 transition-all"
+                                   :class="forms.materias.mostrar ? 'active bg-primary bg-opacity-10 text-primary fw-bold border border-primary border-opacity-25' : 'text-body-secondary'"
+                                   href="#" @click.prevent="abrirVentana('materias')">
                                     <i class="bi bi-book"></i> Materias
                                 </a>
                             </li>
 
-                            <!-- ADMIN ÚNICAMENTE -->
-                            <li class="nav-item" v-if="puedeVerDocentes">
-                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
-                                    :class="forms.docentes.mostrar ? 'active text-white' : 'text-secondary'"
-                                    :style="forms.docentes.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
-                                    @click.prevent="abrirVentana('docentes')">
-                                    <i class="bi bi-person-workspace"></i> Docentes
-                                </a>
-                            </li>
-
-                            <!-- ADMIN Y ALUMNO -->
-                            <li class="nav-item" v-if="puedeVerMatricula">
-                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
-                                    :class="forms.matricula.mostrar ? 'active text-white' : 'text-secondary'"
-                                    :style="forms.matricula.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
-                                    @click.prevent="abrirVentana('matricula')">
+                            <li class="nav-item">
+                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2 transition-all"
+                                   :class="forms.matricula.mostrar ? 'active bg-primary bg-opacity-10 text-primary fw-bold border border-primary border-opacity-25' : 'text-body-secondary'"
+                                   href="#" @click.prevent="abrirVentana('matricula')">
                                     <i class="bi bi-card-checklist"></i> Matrícula
                                 </a>
                             </li>
-
-                            <!-- TODOS LOS ROLES -->
-                            <li class="nav-item" v-if="puedeVerInscripciones">
-                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
-                                    :class="forms.inscripciones.mostrar ? 'active text-white' : 'text-secondary'"
-                                    :style="forms.inscripciones.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
-                                    @click.prevent="abrirVentana('inscripciones')">
+                            <li class="nav-item">
+                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2 transition-all"
+                                   :class="forms.inscripciones.mostrar ? 'active bg-primary bg-opacity-10 text-primary fw-bold border border-primary border-opacity-25' : 'text-body-secondary'"
+                                   href="#" @click.prevent="abrirVentana('inscripciones')">
                                     <i class="bi bi-pencil-square"></i> Inscripciones
                                 </a>
                             </li>
-
-                            <!-- TODOS LOS ROLES -->
-                            <li class="nav-item" v-if="puedeVerNotas">
-                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
-                                    :class="forms.notas.mostrar ? 'active text-white' : 'text-secondary'"
-                                    :style="forms.notas.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
-                                    @click.prevent="abrirVentana('solicitudes')">
-                                    <i class="bi bi-journal-check"></i> Notas
+                            <li class="nav-item" v-if="sesion.rol === 'Alumno'">
+                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2 transition-all"
+                                   :class="forms.mis_notas.mostrar ? 'active bg-primary bg-opacity-10 text-primary fw-bold border border-primary border-opacity-25' : 'text-body-secondary'"
+                                   href="#" @click.prevent="abrirVentana('mis_notas')">
+                                    <i class="bi bi-journal-check"></i> Mis Notas
                                 </a>
                             </li>
-
-                            <!-- ADMIN ÚNICAMENTE -->
-                            <li class="nav-item" v-if="puedeVerSolicitudes">
-                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2"
-                                    :class="forms.solicitudes.mostrar ? 'active text-white' : 'text-secondary'"
-                                    :style="forms.solicitudes.mostrar ? 'background-color:#1a3a5c;' : ''" href="#"
-                                    @click.prevent="abrirVentana('solicitudes')">
-                                    <i class="bi bi-person-plus-fill"></i> Solicitudes
-                                    <!-- Badge de pendientes (opcional, requeriría computed en main) -->
+                            <li class="nav-item">
+                                <a class="nav-link rounded d-flex align-items-center gap-2 px-3 py-2 transition-all"
+                                   :class="forms.mi_perfil.mostrar ? 'active bg-primary bg-opacity-10 text-primary fw-bold border border-primary border-opacity-25' : 'text-body-secondary'"
+                                   href="#" @click.prevent="abrirVentana('mi_perfil')">
+                                    <i class="bi bi-person-circle"></i> Mi Perfil
                                 </a>
                             </li>
-
                         </ul>
                     </nav>
 
                     <!-- CONTENIDO PRINCIPAL -->
                     <main class="col-md-10 col-lg-10 ms-sm-auto px-4 py-4">
 
-                        <!-- Bienvenida -->
+                        <!-- Pantalla de bienvenida -->
                         <div v-if="!Object.values(forms).some(f => f.mostrar)" class="text-center mt-5 pt-4">
-                            <i class="bi bi-mortarboard text-secondary" style="font-size:4rem;opacity:0.3;"></i>
-                            <h5 class="text-muted mt-3 fw-normal">
-                                Bienvenido/a, <strong>{{ usuarioActual.nombre }}</strong>
-                                <span class="badge ms-2" :class="rolBadgeClass">{{ rolLabel }}</span>
-                            </h5>
-                            <p class="text-muted small">Seleccione un módulo del menú lateral para comenzar.</p>
+                            <i class="bi bi-mortarboard text-body-secondary" style="font-size: 4rem; opacity: 0.3;"></i>
+                            <h5 class="text-body-secondary mt-3 fw-normal">Bienvenido, <strong class="text-body">{{ sesion.username }}</strong>. Seleccione un módulo del menú lateral para comenzar.</h5>
                         </div>
 
-                        <alumnos @buscar='buscar("busqueda_alumnos","obtenerAlumnos")' :forms="forms" ref="alumnos"
-                            v-show="forms.alumnos.mostrar"></alumnos>
-                        <busqueda_alumnos @modificar='modificar("alumnos","modificarAlumno",$event)'
-                            ref="busqueda_alumnos" v-show="forms.busqueda_alumnos.mostrar"></busqueda_alumnos>
+                        <alumnos @buscar='buscar("busqueda_alumnos","obtenerAlumnos")' :forms="forms" ref="alumnos" v-show="forms.alumnos.mostrar"></alumnos>
+                        <busqueda_alumnos @modificar='modificar("alumnos","modificarAlumno", $event)' ref="busqueda_alumnos" v-show="forms.busqueda_alumnos.mostrar"></busqueda_alumnos>
 
-                        <materias @buscar='buscar("busqueda_materias","obtenerMaterias")' :forms="forms" ref="materias"
-                            v-show="forms.materias.mostrar"></materias>
-                        <busqueda_materias @modificar='modificar("materias","modificarMateria",$event)'
-                            ref="busqueda_materias" v-show="forms.busqueda_materias.mostrar"></busqueda_materias>
+                        <materias @buscar='buscar("busqueda_materias","obtenerMaterias")' :forms="forms" ref="materias" v-show="forms.materias.mostrar"></materias>
+                        <busqueda_materias @modificar='modificar("materias","modificarMateria", $event)' ref="busqueda_materias" v-show="forms.busqueda_materias.mostrar"></busqueda_materias>
 
-                        <docentes @buscar='buscar("busqueda_docentes","obtenerDocentes")' :forms="forms" ref="docentes"
-                            v-show="forms.docentes.mostrar"></docentes>
-                        <busqueda_docentes @modificar='modificar("docentes","modificarDocente",$event)'
-                            ref="busqueda_docentes" v-show="forms.busqueda_docentes.mostrar"></busqueda_docentes>
 
-                        <matricula @buscar='buscar("busqueda_matricula","obtenerMatriculas")' :forms="forms"
-                            ref="matricula" v-show="forms.matricula.mostrar"></matricula>
-                        <busqueda_matricula @modificar='modificar("matricula","modificarMatricula",$event)'
-                            ref="busqueda_matricula" v-show="forms.busqueda_matricula.mostrar"></busqueda_matricula>
+                        <matricula @buscar='buscar("busqueda_matricula","obtenerMatriculas")' :forms="forms" ref="matricula" v-show="forms.matricula.mostrar"></matricula>
+                        <busqueda_matricula @modificar='modificar("matricula","modificarMatricula", $event)' ref="busqueda_matricula" v-show="forms.busqueda_matricula.mostrar"></busqueda_matricula>
 
-                        <inscripciones @buscar='buscar("busqueda_inscripciones","obtenerInscripciones")' :forms="forms"
-                            ref="inscripciones" v-show="forms.inscripciones.mostrar"></inscripciones>
-                        <busqueda_inscripciones @modificar='modificar("inscripciones","modificarInscripcion",$event)'
-                            ref="busqueda_inscripciones" v-show="forms.busqueda_inscripciones.mostrar">
-                        </busqueda_inscripciones>
+                        <inscripciones @buscar='buscar("busqueda_inscripciones","obtenerInscripciones")' :forms="forms" ref="inscripciones" v-show="forms.inscripciones.mostrar"></inscripciones>
+                        <busqueda_inscripciones @modificar='modificar("inscripciones","modificarInscripcion", $event)' ref="busqueda_inscripciones" v-show="forms.busqueda_inscripciones.mostrar"></busqueda_inscripciones>
 
-                        <!-- Notas: docente/admin ingresan, alumno consulta -->
-                        <notas_docente v-if="usuarioActual.tipo !== 'alumno'" :usuarioActual="usuarioActual"
-                            v-show="forms.notas.mostrar">
-                        </notas_docente>
-                        <notas_alumno v-if="usuarioActual.tipo === 'alumno'" :usuarioActual="usuarioActual"
-                            v-show="forms.notas.mostrar">
-                        </notas_alumno>
-
-                        <!-- Solicitudes de cuenta (Admin) -->
-                        <solicitudes_admin v-if="usuarioActual.tipo === 'admin'" v-show="forms.solicitudes.mostrar">
-                        </solicitudes_admin>
+                        <mis_notas ref="mis_notas" v-show="forms.mis_notas.mostrar"></mis_notas>
+                        <mi_perfil ref="mi_perfil" v-if="forms.mi_perfil.mostrar" @foto-cambiada="actualizarFotoSesion"></mi_perfil>
 
                     </main>
                 </div>
@@ -206,13 +148,10 @@
 
     <script src="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/alertify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dexie/4.2.0/dexie.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
-    <!-- DB primero: disponible para todos los componentes -->
-    <script src="registro-alumnos/db.js"></script>
-
-    <!-- Login (requiere db y sha256) -->
     <script src="registro-alumnos/login.js"></script>
 
     <script src="registro-alumnos/alumnos.js"></script>
@@ -221,21 +160,15 @@
     <script src="registro-alumnos/materia.js"></script>
     <script src="registro-alumnos/busqueda_materias.js"></script>
 
-    <script src="registro-alumnos/docentes.js"></script>
-    <script src="registro-alumnos/busqueda_docentes.js"></script>
 
     <script src="registro-alumnos/matricula.js"></script>
     <script src="registro-alumnos/busqueda_matrcula.js"></script>
 
     <script src="registro-alumnos/inscripciones.js"></script>
     <script src="registro-alumnos/busqueda_inscripciones.js"></script>
-
-    <script src="registro-alumnos/notas_docente.js"></script>
-    <script src="registro-alumnos/notas_alumno.js"></script>
-
-    <script src="registro-alumnos/solicitudes_admin.js"></script>
+    <script src="registro-alumnos/mis_notas.js"></script>
+    <script src="registro-alumnos/mi_perfil.js"></script>
 
     <script src="main.js"></script>
 </body>
-
 </html>
