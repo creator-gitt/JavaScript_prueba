@@ -22,9 +22,9 @@ const alumnosAdmin = {
             const f = this.filtro.toLowerCase().trim();
             if (!f) return this.alumnos;
             return this.alumnos.filter(a =>
-                (a.nombre   || '').toLowerCase().includes(f) ||
-                (a.codigo   || '').toLowerCase().includes(f) ||
-                (a.carrera  || '').toLowerCase().includes(f)
+                (a.nombre || '').toLowerCase().includes(f) ||
+                (a.codigo || '').toLowerCase().includes(f) ||
+                (a.carrera || '').toLowerCase().includes(f)
             );
         }
     },
@@ -33,7 +33,7 @@ const alumnosAdmin = {
             this.cargando = true;
             [this.alumnos, this.carreras] = await Promise.all([
                 db.alumnos.orderBy('nombre').toArray(),
-                db.carreras.filter(c => (c.estado||'activa')==='activa').sortBy('nombre')
+                db.carreras.filter(c => (c.estado || 'activa') === 'activa').sortBy('nombre')
             ]);
             this.cargando = false;
         },
@@ -44,49 +44,46 @@ const alumnosAdmin = {
                 `¿Estás seguro de ELIMINAR a <b>${alumno.nombre}</b>?<br>Se borrarán su usuario, matrícula, inscripciones y notas de forma permanente.`,
                 async () => {
                     try {
-                        // 1. Eliminar Matrícula
-                        const matriculas = await db.matricula.where('idAlumno').equals(alumno.idAlumno).toArray();
+                        // 1. ELIMINAR CUENTA DE USUARIO (si tiene)
+                        if (alumno.usuarioId) {
+                            await db.usuarios.delete(Number(alumno.usuarioId));
+                        } else {
+                            // Fallback: buscar por código si no hay usuarioId
+                            const user = await db.usuarios.where('codigo').equalsIgnoreCase(alumno.codigo).first();
+                            if (user && user.rol === 'Alumno') await db.usuarios.delete(user.id);
+                        }
+
+                        // 2. ELIMINAR MATRÍCULA E INSCRIPCIONES
+                        // Nota: Usamos alumnoId y matriculaId según el esquema v9+
+                        const matriculas = await db.matricula.where('alumnoId').equals(Number(alumno.idAlumno)).toArray();
                         const idsMatricula = matriculas.map(m => m.idMatricula);
-                        await db.matricula.where('idAlumno').equals(alumno.idAlumno).delete();
 
-                        // 2. Eliminar Inscripciones y Evaluaciones (Notas)
                         if (idsMatricula.length > 0) {
-                            const inscripciones = await db.inscripciones.where('idMatricula').anyOf(idsMatricula).toArray();
+                            // Borrar inscripciones de esas matrículas
+                            const inscripciones = await db.inscripciones.where('matriculaId').anyOf(idsMatricula).toArray();
                             const idsInscripciones = inscripciones.map(i => i.idInscripcion);
-                            
-                            await db.inscripciones.where('idMatricula').anyOf(idsMatricula).delete();
-                            
+
+                            await db.inscripciones.where('matriculaId').anyOf(idsMatricula).delete();
+
                             if (idsInscripciones.length > 0) {
-                                await db.evaluaciones.where('idInscripcion').anyOf(idsInscripciones).delete();
+                                await db.evaluaciones.where('inscripcionId').anyOf(idsInscripciones).delete();
                             }
+
+                            // Borrar las matrículas
+                            await db.matricula.where('alumnoId').equals(Number(alumno.idAlumno)).delete();
                         }
 
-                        // 3. Eliminar usuario asociado (si existe)
-                        // A. Buscar por código
-                        let user = null;
-                        if (alumno.codigo) {
-                            user = await db.usuarios.where('codigo').equalsIgnoreCase(alumno.codigo).first();
-                        }
-                        // B. Si no, buscar por username
-                        if (!user && alumno.nombre) {
-                             user = await db.usuarios.where('username').equalsIgnoreCase(alumno.nombre).first();
-                        }
-                        
-                        // C. Si encontramos usuario, verificar que sea Alumno
-                        if (user && user.rol === 'Alumno') {
-                            await db.usuarios.delete(user.id);
-                        }
+                        // 3. ELIMINAR EL EXPEDIENTE DEL ALUMNO
+                        await db.alumnos.delete(Number(alumno.idAlumno));
 
-                        // 4. Eliminar Alumno
-                        await db.alumnos.delete(alumno.idAlumno);
-                        
-                        alertify.success('Alumno y todos sus registros eliminados.');
+                        alertify.success('Alumno y su cuenta oficial eliminados correctamente.');
                         await this.cargar();
-                    } catch(e) {
+                    } catch (e) {
+                        console.error(e);
                         alertify.error('Error al eliminar: ' + e.message);
                     }
                 },
-                () => {}
+                () => { }
             ).set('labels', { ok: 'Sí, ELIMINAR', cancel: 'Cancelar' });
         },
         async toggleEstado(alumno) {
@@ -125,16 +122,16 @@ const alumnosAdmin = {
                 return;
             }
             this.guardandoEdit = true;
-            const car = this.carreras.find(c => c.nombre === (this.editando.carrera||''));
+            const car = this.carreras.find(c => c.nombre === (this.editando.carrera || ''));
             await db.alumnos.update(this.editando.idAlumno, {
-                codigo:    this.editando.codigo,
-                nombre:    this.editando.nombre,
-                carrera:   this.editando.carrera || '',
+                codigo: this.editando.codigo,
+                nombre: this.editando.nombre,
+                carrera: this.editando.carrera || '',
                 carreraId: car ? String(car.idCarrera) : (this.editando.carreraId || ''),
                 direccion: this.editando.direccion || '',
-                email:     this.editando.email || '',
-                telefono:  this.editando.telefono || '',
-                foto:      this.editando.foto
+                email: this.editando.email || '',
+                telefono: this.editando.telefono || '',
+                foto: this.editando.foto
             });
             await this.cargar();
             this.cerrarModal('modalEditarAlumno');
@@ -144,11 +141,11 @@ const alumnosAdmin = {
         async verHistorial(alumno) {
             this.alumnoDetalle = alumno;
             this.histMatriculas = await db.matricula
-                .filter(m => String(m.codigo) === String(alumno.codigo) || String(m.nombreAlumno) === String(alumno.nombre))
+                .where('alumnoId').equals(Number(alumno.idAlumno))
                 .toArray();
             const idMatriculas = this.histMatriculas.map(m => m.idMatricula);
             this.histInscripciones = idMatriculas.length
-                ? await db.inscripciones.filter(i => idMatriculas.includes(i.idMatricula)).toArray()
+                ? await db.inscripciones.where('matriculaId').anyOf(idMatriculas).toArray()
                 : [];
             this.abrirModal('modalHistorialAlumno');
         },

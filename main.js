@@ -94,10 +94,18 @@ db.version(9).stores({
     evaluaciones: '++id, inscripcionId, estado',
     solicitudes: '++id, tipo, nombre, codigo, fecha, estado'
 });
-// v10: Agregar campos de Fecha de Nacimiento, Género y DUI (indexado)
-db.version(10).stores({
+// v11: Asegurar índices para eliminación en cascada y búsquedas relacionales
+db.version(11).stores({
+    usuarios: '++id, username, codigo, email, rol, estado',
     alumnos: '++idAlumno, codigo, nombre, dui, usuarioId, carreraId, foto, estado, tokenAcceso',
-    docentes: '++idDocente, codigo, nombre, dui, usuarioId, especialidad, foto, estado, tokenAcceso'
+    docentes: '++idDocente, codigo, nombre, dui, usuarioId, especialidad, foto, estado, tokenAcceso',
+    carreras: '++idCarrera, codigo, nombre, facultad, estado',
+    materias: '++idMateria, codigo, nombre, docenteId, carreraId, estado',
+    periodos: '++idPeriodo, año, ciclo, estado',
+    matricula: '++idMatricula, codigo, alumnoId, periodoId, carreraId, estado',
+    inscripciones: '++idInscripcion, matriculaId, materiaId, estado',
+    evaluaciones: '++id, inscripcionId, estado',
+    solicitudes: '++id, tipo, nombre, codigo, fecha, estado'
 });
 
 // =============================================

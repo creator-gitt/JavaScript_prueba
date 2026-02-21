@@ -11,7 +11,9 @@ const alumnos = {
                 telefono: "",
                 fechaNacimiento: "",
                 genero: "",
-                dui: ""
+                dui: "",
+                foto: "",
+                usuarioId: null
             },
             accion: 'nuevo',
             idAlumno: 0,
@@ -34,6 +36,21 @@ const alumnos = {
             this.alumno.fechaNacimiento = alumno.fechaNacimiento;
             this.alumno.genero = alumno.genero;
             this.alumno.dui = alumno.dui;
+            this.alumno.foto = alumno.foto || "";
+            this.alumno.usuarioId = alumno.usuarioId || null;
+        },
+        seleccionarFoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.size > 500 * 1024) { // 500KB limit
+                alertify.error('La imagen es muy pesada (máx 500KB).');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.alumno.foto = e.target.result;
+            };
+            reader.readAsDataURL(file);
         },
         async guardarAlumno() {
             let datos = {
@@ -45,7 +62,9 @@ const alumnos = {
                 telefono: this.alumno.telefono,
                 fechaNacimiento: this.alumno.fechaNacimiento,
                 genero: this.alumno.genero,
-                dui: this.alumno.dui
+                dui: this.alumno.dui,
+                foto: this.alumno.foto,
+                usuarioId: this.alumno.usuarioId
             };
             this.buscar = datos.codigo;
 
@@ -71,6 +90,7 @@ const alumnos = {
             this.alumno.fechaNacimiento = '';
             this.alumno.genero = '';
             this.alumno.dui = '';
+            this.alumno.foto = '';
         },
     },
     template: `
@@ -83,44 +103,65 @@ const alumnos = {
             <form id="frmAlumnos" @submit.prevent="guardarAlumno" @reset.prevent="limpiarFormulario">
                 <div class="card border-0 shadow-sm bg-body-tertiary" style="max-width: 480px;">
                     <div class="card-body p-4">
+
+                        <!-- FOTO -->
+                        <div class="mb-4 text-center">
+                            <div class="position-relative d-inline-block">
+                                <img :src="alumno.foto || 'https://via.placeholder.com/150?text=Foto'"
+                                     class="rounded-circle border border-secondary-subtle shadow-sm"
+                                     style="width:100px; height:100px; object-fit: cover;">
+                                <label class="position-absolute bottom-0 end-0 bg-body border rounded-circle p-1 shadow-sm"
+                                       style="cursor:pointer;" title="Subir foto">
+                                    <i class="bi bi-camera-fill text-primary small"></i>
+                                    <input type="file" class="d-none" accept="image/*" @change="seleccionarFoto">
+                                </label>
+                            </div>
+                        </div>
+
                         <div class="mb-3 row align-items-center">
-                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Código</label>
+                            <label class="col-sm-5 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Código</label>
                             <div class="col-sm-5">
                                 <input placeholder="Ej. A-001" required v-model="alumno.codigo" type="text" class="form-control form-control-sm bg-transparent">
                             </div>
                         </div>
                         <div class="mb-3 row align-items-center">
-                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Nombre</label>
-                            <div class="col-sm-8">
-                                <input placeholder="Nombre completo" required v-model="alumno.nombre" type="text" class="form-control form-control-sm bg-transparent">
+                            <label class="col-sm-5 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Nombre Completo</label>
+                            <div class="col-sm-7">
+                                <input placeholder="Nombre completo" required v-model="alumno.nombre" type="text" 
+                                       class="form-control form-control-sm"
+                                       :class="alumno.usuarioId ? 'bg-body-secondary' : 'bg-transparent'"
+                                       :readonly="alumno.usuarioId">
+                                <div v-if="alumno.usuarioId" class="text-muted mt-1" style="font-size: 0.65rem;">
+                                    <i class="bi bi-info-circle me-1"></i>Sincronizado con la cuenta de usuario.
+                                </div>
                             </div>
                         </div>
                         <div class="mb-3 row align-items-center">
-                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Dirección</label>
-                            <div class="col-sm-8">
+                            <label class="col-sm-5 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Dirección</label>
+                            <div class="col-sm-7">
                                 <input placeholder="Dirección" required v-model="alumno.direccion" type="text" class="form-control form-control-sm bg-transparent">
                             </div>
                         </div>
                         <div class="mb-3 row align-items-center">
-                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Email</label>
-                            <div class="col-sm-8">
+                            <label class="col-sm-5 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Email Universitario</label>
+                            <div class="col-sm-7">
                                 <input placeholder="correo@universidad.edu" required v-model="alumno.email" type="text" class="form-control form-control-sm bg-transparent">
                             </div>
                         </div>
                         <div class="mb-3 row align-items-center">
-                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Teléfono</label>
+                            <label class="col-sm-5 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Teléfono</label>
                             <div class="col-sm-6">
                                 <input placeholder="0000-0000" required v-model="alumno.telefono" type="text" class="form-control form-control-sm bg-transparent">
                             </div>
                         </div>
                         <div class="mb-3 row align-items-center">
-                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Fecha Nacimiento</label>
+                            <label class="col-sm-5 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Fecha Nacimiento</label>
                             <div class="col-sm-6">
                                 <input required v-model="alumno.fechaNacimiento" type="date" class="form-control form-control-sm bg-transparent">
                             </div>
                         </div>
                         <div class="mb-3 row align-items-center">
-                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Género</label>
+                            <label class="col-sm-5 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Género</label>
                             <div class="col-sm-6">
                                 <select required v-model="alumno.genero" class="form-select form-select-sm bg-transparent">
                                     <option value="" disabled>Seleccione...</option>
@@ -130,7 +171,7 @@ const alumnos = {
                             </div>
                         </div>
                         <div class="mb-1 row align-items-center">
-                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">DUI (con guion)</label>
+                            <label class="col-sm-5 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Número de DUI</label>
                             <div class="col-sm-6">
                                 <input placeholder="00000000-0" maxlength="10" required v-model="alumno.dui" type="text" class="form-control form-control-sm bg-transparent">
                             </div>

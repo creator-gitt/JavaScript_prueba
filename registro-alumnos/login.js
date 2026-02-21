@@ -196,15 +196,15 @@ const login = {
                     } else {
                         // CREACIÓN NUEVA: crear perfil con usuarioId
                         await db.alumnos.add({
-                            codigo:    codigo || '',
-                            nombre:    username,
-                            email:     email  || '',
+                            codigo: codigo || '',
+                            nombre: username,
+                            email: email || '',
                             usuarioId: nuevoUsuarioId,
                             carreraId: '',
-                            foto:      '',
-                            telefono:  '',
+                            foto: '',
+                            telefono: '',
                             direccion: '',
-                            estado:    'activo',
+                            estado: 'activo',
                             tokenAcceso: ''
                         });
                     }
@@ -234,15 +234,15 @@ const login = {
                     } else {
                         // CREACIÓN NUEVA: crear perfil con usuarioId
                         await db.docentes.add({
-                            codigo:       codigo || '',
-                            nombre:       username,
-                            email:        email  || '',
-                            usuarioId:    nuevoUsuarioId,
+                            codigo: codigo || '',
+                            nombre: username,
+                            email: email || '',
+                            usuarioId: nuevoUsuarioId,
                             especialidad: '',
-                            foto:         '',
-                            telefono:     '',
-                            estado:       'activo',
-                            tokenAcceso:  ''
+                            foto: '',
+                            telefono: '',
+                            estado: 'activo',
+                            tokenAcceso: ''
                         });
                     }
                 }
@@ -280,7 +280,7 @@ const login = {
                 const existe = await db.solicitudes
                     .filter(s => s.codigo === codigo && s.nombre === username && s.estado === 'pendiente')
                     .first();
-                
+
                 if (existe) {
                     alertify.alert('Solicitud Pendiente', 'Ya has enviado una solicitud. Por favor espera a que el administrador te contacte.');
                     return;
@@ -428,11 +428,11 @@ const login = {
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold small text-uppercase text-body-secondary">Nombre de usuario <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold small text-uppercase text-body-secondary">Nombre Completo <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-body-tertiary border-end-0"><i class="bi bi-person text-body-secondary"></i></span>
                                     <input v-model="regForm.username" type="text" class="form-control border-start-0 bg-transparent"
-                                           placeholder="Mínimo 4 caracteres" minlength="4" required autocomplete="username">
+                                           placeholder="Ej. Juan Pérez" minlength="4" required autocomplete="name">
                                 </div>
                             </div>
 

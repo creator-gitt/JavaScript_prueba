@@ -20,9 +20,9 @@ const docentesAdmin = {
             const f = this.filtro.toLowerCase().trim();
             if (!f) return this.docentes;
             return this.docentes.filter(d =>
-                (d.nombre      || '').toLowerCase().includes(f) ||
-                (d.codigo      || '').toLowerCase().includes(f) ||
-                (d.especialidad|| '').toLowerCase().includes(f)
+                (d.nombre || '').toLowerCase().includes(f) ||
+                (d.codigo || '').toLowerCase().includes(f) ||
+                (d.especialidad || '').toLowerCase().includes(f)
             );
         }
     },
@@ -46,38 +46,32 @@ const docentesAdmin = {
                 `¿Estás seguro de ELIMINAR a <b>${docente.nombre}</b>?<br>Se borrarán su usuario y datos. Las materias asignadas quedarán sin docente.`,
                 async () => {
                     try {
-                        // 1. Desasignar materias
+                        // 1. ELIMINAR CUENTA DE USUARIO (si tiene)
+                        if (docente.usuarioId) {
+                            await db.usuarios.delete(Number(docente.usuarioId));
+                        } else {
+                            // Fallback: buscar por código
+                            const user = await db.usuarios.where('codigo').equalsIgnoreCase(docente.codigo).first();
+                            if (user && user.rol === 'Docente') await db.usuarios.delete(user.id);
+                        }
+
+                        // 2. Desasignar materias (el campo en materias es docenteId)
                         const materiasAsignadas = await db.materias.where('docenteId').equals(String(docente.idDocente)).toArray();
                         for (const m of materiasAsignadas) {
                             await db.materias.update(m.idMateria, { docenteId: '' });
                         }
-                        
-                        // 2. Eliminar usuario asociado (si existe)
-                        // A. Buscar por código
-                        let user = null;
-                        if (docente.codigo) {
-                            user = await db.usuarios.where('codigo').equalsIgnoreCase(docente.codigo).first();
-                        }
-                        // B. Si no, buscar por username (asumiendo que coinciden o es similar)
-                        if (!user && docente.nombre) {
-                             user = await db.usuarios.where('username').equalsIgnoreCase(docente.nombre).first();
-                        }
-                        
-                        // C. Si encontramos usuario, verificar que sea Docente antes de borrar
-                        if (user && user.rol === 'Docente') {
-                            await db.usuarios.delete(user.id);
-                        }
 
                         // 3. Eliminar docente
-                        await db.docentes.delete(docente.idDocente);
-                        
-                        alertify.success('Docente eliminado y materias desasignadas.');
+                        await db.docentes.delete(Number(docente.idDocente));
+
+                        alertify.success('Docente y su cuenta oficial eliminados. Materias liberadas.');
                         await this.cargar();
-                    } catch(e) {
+                    } catch (e) {
+                        console.error(e);
                         alertify.error('Error al eliminar: ' + e.message);
                     }
                 },
-                () => {}
+                () => { }
             ).set('labels', { ok: 'Sí, ELIMINAR', cancel: 'Cancelar' });
         },
         async toggleEstado(docente) {

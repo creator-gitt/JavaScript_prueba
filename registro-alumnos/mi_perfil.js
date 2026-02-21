@@ -24,15 +24,15 @@ const miPerfil = {
     methods: {
         async hashPassword(pwd) {
             const data = new TextEncoder().encode(pwd);
-            const buf  = await crypto.subtle.digest('SHA-256', data);
-            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+            const buf = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
         },
         async cargar() {
             this.cargando = true;
             try {
                 const s = JSON.parse(sessionStorage.getItem('sesionUniversidad') || '{}');
                 const username = s.username || '';
-                const codigo   = s.codigo   || '';
+                const codigo = s.codigo || '';
 
                 // Cargar usuario
                 const usuario = await db.usuarios.where('username').equals(username).first();
@@ -52,12 +52,12 @@ const miPerfil = {
                 }
                 if (alumno) {
                     this._alumnoId = alumno.idAlumno;
-                    this.perfil.nombre    = alumno.nombre    || '';
-                    this.perfil.telefono  = alumno.telefono  || '';
+                    this.perfil.nombre = alumno.nombre || '';
+                    this.perfil.telefono = alumno.telefono || '';
                     this.perfil.direccion = alumno.direccion || '';
-                    this.perfil.codigo    = alumno.codigo    || '';
-                    this.perfil.carrera   = alumno.carrera   || '';
-                    this.perfil.foto      = alumno.foto      || '';
+                    this.perfil.codigo = alumno.codigo || '';
+                    this.perfil.carrera = alumno.carrera || '';
+                    this.perfil.foto = alumno.foto || '';
                     if (!this.perfil.email) this.perfil.email = alumno.email || '';
                 }
             } finally {
@@ -83,11 +83,11 @@ const miPerfil = {
             const modalEl = document.getElementById('modalRecorteFoto');
             const modal = new bootstrap.Modal(modalEl);
             modal.show();
-            
+
             // Init Cropper
             const image = document.getElementById('img-recortar');
             if (this.cropper) { this.cropper.destroy(); }
-            
+
             modalEl.addEventListener('shown.bs.modal', () => {
                 this.cropper = new Cropper(image, {
                     aspectRatio: 1,
@@ -98,31 +98,31 @@ const miPerfil = {
         },
         async guardarFotoRecortada() {
             if (!this.cropper) return;
-            
+
             // Get cropped canvas
             const canvas = this.cropper.getCroppedCanvas({
                 width: 300,
                 height: 300,
                 fillColor: '#fff'
             });
-            
+
             const fotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
             this.perfil.foto = fotoBase64;
-            
+
             // Guardar inmediatamente en BD
             try {
                 if (this._alumnoId) {
                     await db.alumnos.update(this._alumnoId, { foto: fotoBase64 });
-                    
+
                     // Actualizar SessionStorage (sin la foto)
                     const stored = sessionStorage.getItem('sesionUniversidad');
                     if (stored) {
                         const s = JSON.parse(stored);
                         sessionStorage.setItem('sesionUniversidad', JSON.stringify(s));
                     }
-                    
+
                     this.$emit('foto-cambiada', fotoBase64);
-                    
+
                     alertify.success('Foto actualizada correctamente.');
                     bootstrap.Modal.getInstance(document.getElementById('modalRecorteFoto')).hide();
                 } else {
@@ -140,11 +140,11 @@ const miPerfil = {
             try {
                 if (this._alumnoId) {
                     await db.alumnos.update(this._alumnoId, {
-                        nombre:    this.perfil.nombre.trim(),
-                        email:     this.perfil.email.trim(),
-                        telefono:  this.perfil.telefono.trim(),
+                        nombre: this.perfil.nombre.trim(),
+                        email: this.perfil.email.trim(),
+                        telefono: this.perfil.telefono.trim(),
                         direccion: this.perfil.direccion.trim(),
-                        foto:      this.perfil.foto
+                        foto: this.perfil.foto
                     });
                 }
                 if (this._userId) {
@@ -154,7 +154,7 @@ const miPerfil = {
                 const s = JSON.parse(sessionStorage.getItem('sesionUniversidad') || '{}');
                 sessionStorage.setItem('sesionUniversidad', JSON.stringify({ ...s }));
                 alertify.success('✅ Perfil actualizado correctamente.');
-            } catch(e) {
+            } catch (e) {
                 alertify.error('Error al guardar: ' + e.message);
             } finally {
                 this.guardando = false;
@@ -175,7 +175,7 @@ const miPerfil = {
                 await db.usuarios.update(this._userId, { hashPwd: hashNueva });
                 this.pwd = { actual: '', nueva: '', confirmar: '', mostrarActual: false, mostrarNueva: false };
                 alertify.success('🔑 Contraseña actualizada correctamente.');
-            } catch(e) {
+            } catch (e) {
                 alertify.error('Error: ' + e.message);
             } finally {
                 this.cambiandoPwd = false;
@@ -226,7 +226,14 @@ const miPerfil = {
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-body-secondary text-uppercase">Nombre completo *</label>
-                                <input v-model="perfil.nombre" class="form-control form-control-sm bg-transparent" placeholder="Tu nombre completo">
+                                <input v-model="perfil.nombre" 
+                                       class="form-control form-control-sm"
+                                       :class="_userId ? 'bg-body-secondary' : 'bg-transparent'"
+                                       :readonly="_userId"
+                                       placeholder="Tu nombre completo">
+                                <div v-if="_userId" class="text-muted mt-1" style="font-size: 0.65rem;">
+                                    <i class="bi bi-info-circle me-1"></i>Para cambiar tu nombre oficial, contacta al administrador.
+                                </div>
                             </div>
                             <div class="col-sm-6">
                                 <label class="form-label small fw-bold text-body-secondary text-uppercase">Correo electrónico</label>

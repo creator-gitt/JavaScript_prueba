@@ -19,15 +19,15 @@ const perfilDocente = {
     methods: {
         async hashPassword(pwd) {
             const data = new TextEncoder().encode(pwd);
-            const buf  = await crypto.subtle.digest('SHA-256', data);
-            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+            const buf = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
         },
         async cargar() {
             this.cargando = true;
             try {
                 const s = JSON.parse(sessionStorage.getItem('sesionUniversidad') || '{}');
                 const username = s.username || '';
-                const codigo   = s.codigo   || '';
+                const codigo = s.codigo || '';
 
                 const usuario = await db.usuarios.where('username').equals(username).first();
                 if (usuario) { this._userId = usuario.id; this.perfil.email = usuario.email || ''; }
@@ -42,12 +42,12 @@ const perfilDocente = {
                     ) || null;
                 }
                 if (docente) {
-                    this._docenteId  = docente.idDocente;
-                    this.perfil.nombre      = docente.nombre      || '';
-                    this.perfil.telefono    = docente.telefono    || '';
-                    this.perfil.especialidad= docente.especialidad|| '';
-                    this.perfil.codigo      = docente.codigo      || '';
-                    this.perfil.foto        = docente.foto        || '';
+                    this._docenteId = docente.idDocente;
+                    this.perfil.nombre = docente.nombre || '';
+                    this.perfil.telefono = docente.telefono || '';
+                    this.perfil.especialidad = docente.especialidad || '';
+                    this.perfil.codigo = docente.codigo || '';
+                    this.perfil.foto = docente.foto || '';
                     if (!this.perfil.email) this.perfil.email = docente.email || '';
                 }
             } finally { this.cargando = false; }
@@ -71,10 +71,10 @@ const perfilDocente = {
             const modalEl = document.getElementById('modalRecorteDocente');
             const modal = new bootstrap.Modal(modalEl);
             modal.show();
-            
+
             const image = document.getElementById('img-recortar-docente');
             if (this.cropper) { this.cropper.destroy(); }
-            
+
             modalEl.addEventListener('shown.bs.modal', () => {
                 this.cropper = new Cropper(image, {
                     aspectRatio: 1,
@@ -85,31 +85,31 @@ const perfilDocente = {
         },
         async guardarFotoRecortada() {
             if (!this.cropper) return;
-            
+
             const canvas = this.cropper.getCroppedCanvas({
                 width: 300,
                 height: 300,
                 fillColor: '#fff'
             });
-            
+
             const fotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
             this.perfil.foto = fotoBase64;
-            
+
             try {
                 if (this._docenteId) {
                     await db.docentes.update(this._docenteId, { foto: fotoBase64 });
-                    
+
                     // Actualizar SessionStorage (sin la foto)
                     // No es necesario guardar datos extra aquí si main.js lee de DB
                     const stored = sessionStorage.getItem('sesionUniversidad');
                     if (stored) {
-                         const s = JSON.parse(stored);
-                         sessionStorage.setItem('sesionUniversidad', JSON.stringify(s));
+                        const s = JSON.parse(stored);
+                        sessionStorage.setItem('sesionUniversidad', JSON.stringify(s));
                     }
-                    
+
                     // Emitir evento
                     this.$emit('foto-cambiada', fotoBase64);
-                    
+
                     alertify.success('Foto actualizada correctamente.');
                     bootstrap.Modal.getInstance(document.getElementById('modalRecorteDocente')).hide();
                 } else {
@@ -127,16 +127,16 @@ const perfilDocente = {
             try {
                 if (this._docenteId) {
                     await db.docentes.update(this._docenteId, {
-                        nombre:       this.perfil.nombre.trim(),
-                        email:        this.perfil.email.trim(),
-                        telefono:     this.perfil.telefono.trim(),
+                        nombre: this.perfil.nombre.trim(),
+                        email: this.perfil.email.trim(),
+                        telefono: this.perfil.telefono.trim(),
                         especialidad: this.perfil.especialidad.trim(),
-                        foto:         this.perfil.foto
+                        foto: this.perfil.foto
                     });
                 }
                 if (this._userId) await db.usuarios.update(this._userId, { email: this.perfil.email.trim() });
                 alertify.success('✅ Perfil actualizado correctamente.');
-            } catch(e) { alertify.error('Error: ' + e.message); }
+            } catch (e) { alertify.error('Error: ' + e.message); }
             finally { this.guardando = false; }
         },
         async cambiarPassword() {
@@ -152,7 +152,7 @@ const perfilDocente = {
                 await db.usuarios.update(this._userId, { hashPwd: hashNueva });
                 this.pwd = { actual: '', nueva: '', confirmar: '', mostrarActual: false, mostrarNueva: false };
                 alertify.success('🔑 Contraseña actualizada.');
-            } catch(e) { alertify.error('Error: ' + e.message); }
+            } catch (e) { alertify.error('Error: ' + e.message); }
             finally { this.cambiandoPwd = false; }
         }
     },
@@ -196,7 +196,14 @@ const perfilDocente = {
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-body-secondary text-uppercase">Nombre completo *</label>
-                                <input v-model="perfil.nombre" class="form-control form-control-sm bg-transparent" placeholder="Tu nombre completo">
+                                <input v-model="perfil.nombre" 
+                                       class="form-control form-control-sm"
+                                       :class="_userId ? 'bg-body-secondary' : 'bg-transparent'"
+                                       :readonly="_userId"
+                                       placeholder="Tu nombre completo">
+                                <div v-if="_userId" class="text-muted mt-1" style="font-size: 0.65rem;">
+                                    <i class="bi bi-info-circle me-1"></i>Para cambiar tu nombre oficial, contacta al administrador.
+                                </div>
                             </div>
                             <div class="col-sm-6">
                                 <label class="form-label small fw-bold text-body-secondary text-uppercase">Correo electrónico</label>

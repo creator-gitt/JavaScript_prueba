@@ -34,10 +34,10 @@ const inscripcionesAdmin = {
 
             this.materiasConInscritos = materias.map(mat => {
                 const inscs = inscripciones.filter(
-                    i => String(i.idMateria) === String(mat.idMateria)
+                    i => String(i.materiaId || i.idMateria) === String(mat.idMateria)
                 );
                 const inscritosConDatos = inscs.map(i => {
-                    const matr = matriculas.find(m => String(m.idMatricula) === String(i.idMatricula));
+                    const matr = matriculas.find(m => String(m.idMatricula) === String(i.matriculaId || i.idMatricula));
                     return {
                         ...i,
                         nombreAlumno: i.alumno || matr?.nombreAlumno || '—',
@@ -71,7 +71,7 @@ const inscripcionesAdmin = {
         colorBarra(m) {
             const p = this.porcentaje(m);
             if (p >= 100) return 'bg-danger';
-            if (p >= 80)  return 'bg-warning';
+            if (p >= 80) return 'bg-warning';
             return 'bg-success';
         },
         async eliminarInscripcion(inscripcion) {
@@ -83,7 +83,7 @@ const inscripcionesAdmin = {
                     alertify.success('Inscripción eliminada.');
                     await this.cargar();
                 },
-                () => {}
+                () => { }
             ).set('labels', { ok: 'Sí, eliminar', cancel: 'Cancelar' });
         }
     },
