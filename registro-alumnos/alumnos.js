@@ -84,44 +84,44 @@ const alumnos = {
                 <div class="card border-0 shadow-sm bg-body-tertiary" style="max-width: 480px;">
                     <div class="card-body p-4">
                         <div class="mb-3 row align-items-center">
-                            <label class="col-sm-3 col-form-label text-body-secondary small fw-bold text-uppercase">Código</label>
-                            <div class="col-sm-4">
+                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Código</label>
+                            <div class="col-sm-5">
                                 <input placeholder="Ej. A-001" required v-model="alumno.codigo" type="text" class="form-control form-control-sm bg-transparent">
                             </div>
                         </div>
                         <div class="mb-3 row align-items-center">
-                            <label class="col-sm-3 col-form-label text-body-secondary small fw-bold text-uppercase">Nombre</label>
+                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Nombre</label>
                             <div class="col-sm-8">
                                 <input placeholder="Nombre completo" required v-model="alumno.nombre" type="text" class="form-control form-control-sm bg-transparent">
                             </div>
                         </div>
                         <div class="mb-3 row align-items-center">
-                            <label class="col-sm-3 col-form-label text-body-secondary small fw-bold text-uppercase">Dirección</label>
-                            <div class="col-sm-9">
+                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Dirección</label>
+                            <div class="col-sm-8">
                                 <input placeholder="Dirección" required v-model="alumno.direccion" type="text" class="form-control form-control-sm bg-transparent">
                             </div>
                         </div>
                         <div class="mb-3 row align-items-center">
-                            <label class="col-sm-3 col-form-label text-body-secondary small fw-bold text-uppercase">Email</label>
+                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Email</label>
                             <div class="col-sm-8">
                                 <input placeholder="correo@universidad.edu" required v-model="alumno.email" type="text" class="form-control form-control-sm bg-transparent">
                             </div>
                         </div>
-                        <div class="mb-1 row align-items-center">
-                            <label class="col-sm-3 col-form-label text-body-secondary small fw-bold text-uppercase">Teléfono</label>
-                            <div class="col-sm-5">
+                        <div class="mb-3 row align-items-center">
+                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Teléfono</label>
+                            <div class="col-sm-6">
                                 <input placeholder="0000-0000" required v-model="alumno.telefono" type="text" class="form-control form-control-sm bg-transparent">
                             </div>
                         </div>
                         <div class="mb-3 row align-items-center">
-                            <label class="col-sm-3 col-form-label text-body-secondary small fw-bold text-uppercase">F. Nacimiento</label>
+                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Fecha Nacimiento</label>
                             <div class="col-sm-6">
                                 <input required v-model="alumno.fechaNacimiento" type="date" class="form-control form-control-sm bg-transparent">
                             </div>
                         </div>
                         <div class="mb-3 row align-items-center">
-                            <label class="col-sm-3 col-form-label text-body-secondary small fw-bold text-uppercase">Género</label>
-                            <div class="col-sm-5">
+                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">Género</label>
+                            <div class="col-sm-6">
                                 <select required v-model="alumno.genero" class="form-select form-select-sm bg-transparent">
                                     <option value="" disabled>Seleccione...</option>
                                     <option value="Masculino">Masculino</option>
@@ -130,8 +130,8 @@ const alumnos = {
                             </div>
                         </div>
                         <div class="mb-1 row align-items-center">
-                            <label class="col-sm-3 col-form-label text-body-secondary small fw-bold text-uppercase">DUI</label>
-                            <div class="col-sm-5">
+                            <label class="col-sm-4 col-form-label text-body-secondary small fw-bold text-uppercase text-nowrap">DUI (con guion)</label>
+                            <div class="col-sm-6">
                                 <input placeholder="00000000-0" maxlength="10" required v-model="alumno.dui" type="text" class="form-control form-control-sm bg-transparent">
                             </div>
                         </div>
