@@ -153,97 +153,56 @@ const login = {
             try {
                 const existeUser = await db.usuarios.where('username').equalsIgnoreCase(username).first();
                 if (existeUser) { alertify.error('Ese nombre de usuario ya está en uso.'); return; }
-                if (codigo) {
-                    const existeCod = await db.usuarios.where('codigo').equalsIgnoreCase(codigo).first();
-                    if (existeCod) { alertify.error('Ese código ya tiene una cuenta asociada.'); return; }
-                }
+
                 if (email) {
                     const existeEmail = await db.usuarios.where('email').equalsIgnoreCase(email).first();
                     if (existeEmail) { alertify.error('Ese correo ya tiene una cuenta asociada.'); return; }
                 }
 
+                // Validar Token (Obligatorio para Alumnos y Docentes)
+                if (rol !== 'Admin') {
+                    if (!this.regForm.token) {
+                        alertify.error('El Token de Vinculación es obligatorio para registrarse.');
+                        return;
+                    }
+
+                    // Buscar perfil por token
+                    let perfil = null;
+                    if (rol === 'Alumno') {
+                        perfil = await db.alumnos.where('tokenAcceso').equals(this.regForm.token).first();
+                        if (!perfil) { alertify.error('Token de Alumno inválido o ya utilizado.'); return; }
+                    } else if (rol === 'Docente') {
+                        perfil = await db.docentes.where('tokenAcceso').equals(this.regForm.token).first();
+                        if (!perfil) { alertify.error('Token de Docente inválido o ya utilizado.'); return; }
+                    }
+                    this._perfilVinculado = perfil;
+                }
+
                 const hashPwd = await this.hashPassword(password);
-                // Añadir usuario y capturar su ID auto-generado (FK para alumnos/docentes)
                 const nuevoUsuarioId = await db.usuarios.add({
                     username, codigo: codigo || '', email: email || '',
                     hashPwd, rol, estado: 'activo'
                 });
 
-                // Crear o vincular perfil en la tabla correspondiente con usuarioId (FK)
-                if (rol === 'Alumno') {
-                    // Validar formato de Token de Alumno
-                    if (this.regForm.token && !this.regForm.token.startsWith('ALU-')) {
-                        await db.usuarios.delete(nuevoUsuarioId); // Revertir usuario
-                        alertify.error('El token ingresado no es de Alumno (debe empezar con ALU-). Verifica tu rol.');
-                        this.cargando = false;
-                        return;
-                    }
-
-                    let perfil = codigo
-                        ? await db.alumnos.where('codigo').equalsIgnoreCase(codigo).first()
-                        : null;
-
-                    if (perfil) {
-                        // VINCULACIÓN: perfil ya existe — exigir Token correcto
-                        if (!this.regForm.token || this.regForm.token !== perfil.tokenAcceso) {
-                            await db.usuarios.delete(nuevoUsuarioId); // Revertir usuario
-                            alertify.error('Para vincularte a este Carnet/Código existente, necesitas el Token de Vinculación correcto provisto por el administrador.');
-                            this.cargando = false;
-                            return;
-                        }
-                        // Token correcto: vincular usuarioId y consumir token
-                        await db.alumnos.update(perfil.idAlumno, { usuarioId: nuevoUsuarioId, tokenAcceso: null });
-                    } else {
-                        // CREACIÓN NUEVA: crear perfil con usuarioId
-                        await db.alumnos.add({
-                            codigo: codigo || '',
-                            nombre: username,
-                            email: email || '',
+                // Vincular Perfil encontrado por Token
+                if (rol !== 'Admin' && this._perfilVinculado) {
+                    if (rol === 'Alumno') {
+                        await db.alumnos.update(this._perfilVinculado.idAlumno, {
                             usuarioId: nuevoUsuarioId,
-                            carreraId: '',
-                            foto: '',
-                            telefono: '',
-                            direccion: '',
-                            estado: 'activo',
-                            tokenAcceso: ''
+                            tokenAcceso: null
+                        });
+                    } else if (rol === 'Docente') {
+                        await db.docentes.update(this._perfilVinculado.idDocente, {
+                            usuarioId: nuevoUsuarioId,
+                            tokenAcceso: null
                         });
                     }
-                } else if (rol === 'Docente') {
-                    // Validar formato de Token de Docente
-                    if (this.regForm.token && !this.regForm.token.startsWith('DOC-')) {
-                        await db.usuarios.delete(nuevoUsuarioId); // Revertir usuario
-                        alertify.error('El token ingresado no es de Docente (debe empezar con DOC-). Verifica tu rol.');
-                        this.cargando = false;
+                } else if (rol === 'Admin') {
+                    // Validar código admin (si aplica según tu lógica previa)
+                    if (this.regForm.codigoAdmin !== 'UCA2026') { // Ejemplo de código
+                        await db.usuarios.delete(nuevoUsuarioId);
+                        alertify.error('Código de administrador incorrecto.');
                         return;
-                    }
-
-                    let perfil = codigo
-                        ? await db.docentes.where('codigo').equalsIgnoreCase(codigo).first()
-                        : null;
-
-                    if (perfil) {
-                        // VINCULACIÓN
-                        if (!this.regForm.token || this.regForm.token !== perfil.tokenAcceso) {
-                            await db.usuarios.delete(nuevoUsuarioId); // Revertir usuario
-                            alertify.error('Para vincularte a este Código Docente existente, necesitas el Token de Vinculación correcto provisto por el administrador.');
-                            this.cargando = false;
-                            return;
-                        }
-                        // Token correcto: vincular usuarioId y consumir token
-                        await db.docentes.update(perfil.idDocente, { usuarioId: nuevoUsuarioId, tokenAcceso: null });
-                    } else {
-                        // CREACIÓN NUEVA: crear perfil con usuarioId
-                        await db.docentes.add({
-                            codigo: codigo || '',
-                            nombre: username,
-                            email: email || '',
-                            usuarioId: nuevoUsuarioId,
-                            especialidad: '',
-                            foto: '',
-                            telefono: '',
-                            estado: 'activo',
-                            tokenAcceso: ''
-                        });
                     }
                 }
 
@@ -277,12 +236,13 @@ const login = {
 
             try {
                 // Verificar si ya existe solicitud pendiente
+                // Verificar si ya existe solicitud pendiente por nombre y rol
                 const existe = await db.solicitudes
-                    .filter(s => s.codigo === codigo && s.nombre === username && s.estado === 'pendiente')
+                    .filter(s => s.nombre === username && s.tipo === rol && s.estado === 'pendiente')
                     .first();
 
                 if (existe) {
-                    alertify.alert('Solicitud Pendiente', 'Ya has enviado una solicitud. Por favor espera a que el administrador te contacte.');
+                    alertify.alert('Solicitud Pendiente', 'Ya has enviado una solicitud de token. Por favor espera a que el administrador la apruebe.');
                     return;
                 }
 

@@ -37,14 +37,14 @@ const adminDashboard = {
                     db.solicitudes.where('estado').equals('pendiente').toArray()
                 ]);
 
-                this.stats.alumnosTotal     = alumnos.length;
-                this.stats.alumnosActivos   = alumnos.filter(a => (a.estado || 'activo') === 'activo').length;
-                this.stats.docentesActivos  = docentes.filter(d => (d.estado || 'activo') === 'activo').length;
-                this.stats.materiasTotal    = materias.length;
+                this.stats.alumnosTotal = alumnos.length;
+                this.stats.alumnosActivos = alumnos.filter(a => (a.estado || 'activo') === 'activo').length;
+                this.stats.docentesActivos = docentes.filter(d => (d.estado || 'activo') === 'activo').length;
+                this.stats.materiasTotal = materias.length;
                 this.stats.materiasHabilitadas = materias.filter(m => (m.estado || 'habilitada') === 'habilitada').length;
-                this.stats.inscripcionesTotal  = inscripciones.length;
+                this.stats.inscripcionesTotal = inscripciones.length;
                 this.periodoActual = periodos.find(p => p.estado === 'abierto') || null;
-                
+
                 this.solicitudesPendientes = solicitudes;
             } finally {
                 this.cargando = false;
@@ -55,7 +55,7 @@ const adminDashboard = {
             alertify.confirm('Depurar Usuarios Fantasmas', 'Esta acción buscará y eliminará usuarios que quedaron huérfanos (sin perfil de Alumno o Docente asociado) debido a pruebas anteriores. ¿Deseas continuar?', async () => {
                 let eliminados = 0;
                 const usuarios = await db.usuarios.toArray();
-                
+
                 for (const u of usuarios) {
                     if (u.rol === 'Admin') continue;
 
@@ -75,13 +75,13 @@ const adminDashboard = {
                         eliminados++;
                     }
                 }
-                
+
                 if (eliminados > 0) {
                     alertify.success(`Se eliminaron ${eliminados} usuarios fantasmas.`);
                 } else {
                     alertify.message('No se encontraron usuarios fantasmas. Todo limpio.');
                 }
-            }, () => {}).set('labels', {ok:'Sí, Depurar', cancel:'Cancelar'});
+            }, () => { }).set('labels', { ok: 'Sí, Depurar', cancel: 'Cancelar' });
         },
 
         // ── RESTAURAR DATOS ESENCIALES (Schema v9 relacional) ─────────
@@ -104,13 +104,13 @@ const adminDashboard = {
                         const log = [];
                         const hash = async pwd => {
                             const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pwd));
-                            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+                            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
                         };
 
                         // 1. Cuenta Admin
                         let adminUser = await db.usuarios.where('username').equalsIgnoreCase('Admin').first();
                         if (!adminUser) {
-                            const id = await db.usuarios.add({ username:'Admin', codigo:'', email:'admin@universidad.edu', hashPwd: await hash('Admin2026!'), rol:'Admin', estado:'activo' });
+                            const id = await db.usuarios.add({ username: 'Admin', codigo: '', email: 'admin@universidad.edu', hashPwd: await hash('Admin2026!'), rol: 'Admin', estado: 'activo' });
                             adminUser = await db.usuarios.get(id);
                             log.push('✅ Cuenta Admin creada');
                         } else { log.push('⏭ Cuenta Admin ya existe'); }
@@ -118,7 +118,7 @@ const adminDashboard = {
                         // 2. Carrera (FK base para alumnos y materias)
                         let carrera = await db.carreras.where('codigo').equalsIgnoreCase('ISI').first();
                         if (!carrera) {
-                            const id = await db.carreras.add({ codigo:'ISI', nombre:'Ingeniería en Sistemas Informáticos', facultad:'Ing. y Arquitectura', estado:'activo' });
+                            const id = await db.carreras.add({ codigo: 'ISI', nombre: 'Ingeniería en Sistemas Informáticos', facultad: 'Ing. y Arquitectura', estado: 'activo' });
                             carrera = await db.carreras.get(id);
                             log.push('✅ Carrera ISI creada');
                         } else { log.push('⏭ Carrera ISI ya existe'); }
@@ -126,7 +126,7 @@ const adminDashboard = {
                         // 3. Período activo (FK para matrículas)
                         let periodo = await db.periodos.filter(p => p.ciclo === '01' && String(p.año) === '2026').first();
                         if (!periodo) {
-                            const id = await db.periodos.add({ año:'2026', ciclo:'01', estado:'abierto' });
+                            const id = await db.periodos.add({ año: '2026', ciclo: '01', estado: 'abierto' });
                             periodo = await db.periodos.get(id);
                             log.push('✅ Período 01-2026 creado');
                         } else { log.push('⏭ Período ya existe'); }
@@ -136,10 +136,10 @@ const adminDashboard = {
                         if (!docente) {
                             let userDoc = await db.usuarios.where('codigo').equalsIgnoreCase('D-001').first();
                             if (!userDoc) {
-                                const uid = await db.usuarios.add({ username:'Docente Ejemplo', codigo:'D-001', email:'docente@universidad.edu', hashPwd: await hash('Docente2026!'), rol:'Docente', estado:'activo' });
+                                const uid = await db.usuarios.add({ username: 'Docente Ejemplo', codigo: 'D-001', email: 'docente@universidad.edu', hashPwd: await hash('Docente2026!'), rol: 'Docente', estado: 'activo' });
                                 userDoc = await db.usuarios.get(uid);
                             }
-                            const did = await db.docentes.add({ codigo:'D-001', nombre:'Docente Ejemplo', especialidad:'Sistemas Informáticos', email:'docente@universidad.edu', foto:'', telefono:'', usuarioId: userDoc.id, estado:'activo', tokenAcceso:'' });
+                            const did = await db.docentes.add({ codigo: 'D-001', nombre: 'Docente Ejemplo', especialidad: 'Sistemas Informáticos', email: 'docente@universidad.edu', foto: '', telefono: '', usuarioId: userDoc.id, estado: 'activo', tokenAcceso: '' });
                             docente = await db.docentes.get(did);
                             log.push('✅ Docente D-001 + cuenta creados');
                         } else { log.push('⏭ Docente D-001 ya existe'); }
@@ -149,10 +149,10 @@ const adminDashboard = {
                         if (!alumno) {
                             let userAlum = await db.usuarios.where('codigo').equalsIgnoreCase('A-001').first();
                             if (!userAlum) {
-                                const uid = await db.usuarios.add({ username:'Alumno Ejemplo', codigo:'A-001', email:'alumno@universidad.edu', hashPwd: await hash('Alumno2026!'), rol:'Alumno', estado:'activo' });
+                                const uid = await db.usuarios.add({ username: 'Alumno Ejemplo', codigo: 'A-001', email: 'alumno@universidad.edu', hashPwd: await hash('Alumno2026!'), rol: 'Alumno', estado: 'activo' });
                                 userAlum = await db.usuarios.get(uid);
                             }
-                            const aid = await db.alumnos.add({ codigo:'A-001', nombre:'Alumno Ejemplo', email:'alumno@universidad.edu', foto:'', telefono:'', direccion:'', usuarioId: userAlum.id, carreraId: carrera.idCarrera, _carreraNombre: carrera.nombre, estado:'activo', tokenAcceso:'' });
+                            const aid = await db.alumnos.add({ codigo: 'A-001', nombre: 'Alumno Ejemplo', email: 'alumno@universidad.edu', foto: '', telefono: '', direccion: '', usuarioId: userAlum.id, carreraId: carrera.idCarrera, _carreraNombre: carrera.nombre, estado: 'activo', tokenAcceso: '' });
                             alumno = await db.alumnos.get(aid);
                             log.push('✅ Alumno A-001 + cuenta creados');
                         } else { log.push('⏭ Alumno A-001 ya existe'); }
@@ -160,7 +160,7 @@ const adminDashboard = {
                         // 6. Materia (docenteId + carreraId FKs)
                         let materia = await db.materias.where('codigo').equalsIgnoreCase('MAT-001').first();
                         if (!materia) {
-                            await db.materias.add({ codigo:'MAT-001', nombre:'Matemática I', docenteId: docente.idDocente, _docenteNombre: docente.nombre, carreraId: carrera.idCarrera, _carreraNombre: carrera.nombre, estado:'activo' });
+                            await db.materias.add({ codigo: 'MAT-001', nombre: 'Matemática I', docenteId: docente.idDocente, _docenteNombre: docente.nombre, carreraId: carrera.idCarrera, _carreraNombre: carrera.nombre, estado: 'activo' });
                             log.push('✅ Materia MAT-001 creada');
                         } else { log.push('⏭ Materia MAT-001 ya existe'); }
 
@@ -169,12 +169,12 @@ const adminDashboard = {
                         if (!existeMatricula) {
                             await db.matricula.add({
                                 codigo: 'MATR001',
-                                alumnoId:       alumno.idAlumno,
-                                _alumnoNombre:  alumno.nombre,
-                                carreraId:      carrera.idCarrera,
+                                alumnoId: alumno.idAlumno,
+                                _alumnoNombre: alumno.nombre,
+                                carreraId: carrera.idCarrera,
                                 _carreraNombre: carrera.nombre,
-                                periodoId:      periodo.idPeriodo,
-                                _periodoCiclo:  periodo.ciclo + ' - ' + periodo.año,
+                                periodoId: periodo.idPeriodo,
+                                _periodoCiclo: periodo.ciclo + ' - ' + periodo.año,
                                 estado: 'Activo',
                                 fechaCreacion: new Date().toISOString()
                             });
@@ -186,13 +186,13 @@ const adminDashboard = {
                             '<ul class="text-start small">' + log.map(i => `<li>${i}</li>`).join('') + '</ul>' +
                             '<hr class="my-2"><small class="text-muted">Credenciales seed:<br>Admin: <code>Admin / Admin2026!</code><br>Docente: <code>Docente Ejemplo / Docente2026!</code><br>Alumno: <code>Alumno Ejemplo / Alumno2026!</code></small>'
                         );
-                    } catch(e) {
+                    } catch (e) {
                         alertify.error('Error al restaurar: ' + e.message);
                         console.error(e);
                     }
                 },
-                () => {}
-            ).set('labels', { ok:'Sí, Restaurar', cancel:'Cancelar' });
+                () => { }
+            ).set('labels', { ok: 'Sí, Restaurar', cancel: 'Cancelar' });
         },
         verSolicitudes() {
             this.mostrarSolicitudes = !this.mostrarSolicitudes;
@@ -260,7 +260,7 @@ const adminDashboard = {
                 // 7. Mostrar el token en el mismo modal
                 this.tokenModal.tokenGenerado = token;
                 this.tokenModal.fase = 'resultado';
-            } catch(e) {
+            } catch (e) {
                 alertify.error('Error al generar token: ' + e.message);
                 console.error('confirmarGenerarToken error:', e);
             } finally {
@@ -292,27 +292,27 @@ const adminDashboard = {
 
                 if (esAlumno) {
                     await db.alumnos.add({
-                        codigo:    solicitud.codigo,
-                        nombre:    solicitud.nombre,
-                        email:     '',
-                        carrera:   '',
+                        codigo: solicitud.codigo,
+                        nombre: solicitud.nombre,
+                        email: '',
+                        carrera: '',
                         carreraId: '',
-                        foto:      '',
-                        telefono:  '',
+                        foto: '',
+                        telefono: '',
                         direccion: '',
-                        estado:    'activo',
+                        estado: 'activo',
                         tokenAcceso: token
                     });
                 } else {
                     await db.docentes.add({
-                        codigo:       solicitud.codigo,
-                        nombre:       solicitud.nombre,
-                        email:        '',
+                        codigo: solicitud.codigo,
+                        nombre: solicitud.nombre,
+                        email: '',
                         especialidad: '',
-                        foto:         '',
-                        telefono:     '',
-                        estado:       'activo',
-                        tokenAcceso:  token
+                        foto: '',
+                        telefono: '',
+                        estado: 'activo',
+                        tokenAcceso: token
                     });
                 }
 
@@ -324,7 +324,7 @@ const adminDashboard = {
                 this.tokenModal.tokenGenerado = token;
                 this.tokenModal.fase = 'resultado';
 
-            } catch(e) {
+            } catch (e) {
                 alertify.error('Error al crear perfil: ' + e.message);
                 console.error('crearPerfilYGenerarToken error:', e);
             } finally {
@@ -340,7 +340,7 @@ const adminDashboard = {
                     this.solicitudesPendientes = this.solicitudesPendientes.filter(s => s.id !== solicitud.id);
                     alertify.error(`Solicitud de ${solicitud.nombre} rechazada.`);
                 },
-                () => {}
+                () => { }
             ).set('labels', { ok: 'Sí, Rechazar', cancel: 'Cancelar' });
         }
     },
@@ -604,7 +604,7 @@ const adminDashboard = {
                                     <div class="border rounded p-3 text-start small bg-light mb-0">
                                         <div><strong>Nombre:</strong> {{ tokenModal.solicitud.nombre }}</div>
                                         <div><strong>Código:</strong> {{ tokenModal.solicitud.codigo }}</div>
-                                        <div><strong>Tipo:</strong> {{ tokenModal.solicitud.codigo.toUpperCase().startsWith('D-') ? 'Docente' : 'Alumno' }}</div>
+                                        <div><strong>Tipo:</strong> {{ tokenModal.solicitud.tipo }}</div>
                                     </div>
                                 </div>
                                 <div class="modal-footer border-0 justify-content-center gap-2">

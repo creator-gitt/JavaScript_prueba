@@ -13,6 +13,7 @@ const perfilDocente = {
             cambiandoPwd: false,
             _userId: null,
             _docenteId: null,
+            listaMaterias: [],
         };
     },
     async mounted() { await this.cargar(); },
@@ -50,6 +51,8 @@ const perfilDocente = {
                     this.perfil.foto = docente.foto || '';
                     if (!this.perfil.email) this.perfil.email = docente.email || '';
                 }
+                // Cargar materias para especialidad
+                this.listaMaterias = await db.materias.orderBy('nombre').toArray();
             } finally { this.cargando = false; }
         },
         seleccionarFoto(event) {
@@ -126,13 +129,33 @@ const perfilDocente = {
             this.guardando = true;
             try {
                 if (this._docenteId) {
-                    await db.docentes.update(this._docenteId, {
+                    let upd = {
                         nombre: this.perfil.nombre.trim(),
                         email: this.perfil.email.trim(),
                         telefono: this.perfil.telefono.trim(),
                         especialidad: this.perfil.especialidad.trim(),
                         foto: this.perfil.foto
-                    });
+                    };
+
+                    // Generar código si no tiene
+                    if (!this.perfil.codigo && this.perfil.especialidad) {
+                        // Usar las primeras 3 letras de la especialidad como prefijo
+                        const prefijoBase = (this.perfil.especialidad.substring(0, 3).toUpperCase()).replace(/[^A-Z]/g, 'DOC');
+                        const prefijo = `D-${prefijoBase}`;
+                        const correlativo = await db.docentes.where('codigo').startsWith(prefijo).count() + 1;
+                        const num = String(correlativo).padStart(3, '0');
+                        const nuevoCodigo = `${prefijo}${num}`;
+
+                        upd.codigo = nuevoCodigo;
+                        this.perfil.codigo = nuevoCodigo;
+                    }
+
+                    await db.docentes.update(this._docenteId, upd);
+
+                    // Sincronizar con Usuarios
+                    if (this._userId && upd.codigo) {
+                        await db.usuarios.update(this._userId, { codigo: upd.codigo });
+                    }
                 }
                 if (this._userId) await db.usuarios.update(this._userId, { email: this.perfil.email.trim() });
                 alertify.success('✅ Perfil actualizado correctamente.');
@@ -186,13 +209,20 @@ const perfilDocente = {
                             </div>
 
                             <div class="col-sm-6">
-                                <label class="form-label small fw-bold text-body-secondary text-uppercase">Código de Docente</label>
-                                <input :value="perfil.codigo" class="form-control form-control-sm bg-body-secondary border-secondary-subtle" readonly>
-                                <div class="form-text text-body-secondary">Asignado por el administrador.</div>
+                                <label class="form-label small fw-bold text-body-secondary text-uppercase">Código Oficial</label>
+                                <input :value="perfil.codigo || 'PENDIENTE'" class="form-control form-control-sm bg-body-secondary border-secondary-subtle fw-bold" 
+                                       :class="!perfil.codigo ? 'text-danger' : 'text-success'" readonly>
+                                <div class="form-text text-body-secondary" v-if="!perfil.codigo">Se generará al definir tu materia.</div>
                             </div>
                             <div class="col-sm-6">
-                                <label class="form-label small fw-bold text-body-secondary text-uppercase">Especialidad</label>
-                                <input v-model="perfil.especialidad" class="form-control form-control-sm bg-transparent" placeholder="Ej. Ingeniería de Software">
+                                <label class="form-label small fw-bold text-body-secondary text-uppercase">Especialidad / Materia <span class="text-danger" v-if="!perfil.codigo">*</span></label>
+                                <select v-if="!perfil.codigo" v-model="perfil.especialidad" class="form-select form-select-sm bg-transparent border-success">
+                                    <option value="">Selecciona tu especialidad...</option>
+                                    <option v-for="m in listaMaterias" :key="m.idMateria" :value="m.nombre">{{ m.nombre }}</option>
+                                    <option value="General">General / Otras</option>
+                                </select>
+                                <input v-else v-model="perfil.especialidad" class="form-control form-control-sm bg-transparent" placeholder="Ej. Ingeniería de Software">
+                                <div class="form-text text-body-secondary" v-if="!perfil.codigo">Esto definirá tu prefijo de identificación.</div>
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-body-secondary text-uppercase">Nombre completo *</label>

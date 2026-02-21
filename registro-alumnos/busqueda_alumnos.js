@@ -2,7 +2,10 @@ const busqueda_alumnos = {
     data() {
         return {
             buscar: '',
-            alumnos: []
+            alumnos: [],
+            carreras: [],
+            filtroCarrera: '',
+            cargando: false
         }
     },
     methods: {
@@ -10,11 +13,22 @@ const busqueda_alumnos = {
             this.$emit('modificar', alumno);
         },
         async obtenerAlumnos() {
-            this.alumnos = await db.alumnos.filter(
-                alumno => alumno.codigo.toLowerCase().includes(this.buscar.toLowerCase())
-                    || alumno.nombre.toLowerCase().includes(this.buscar.toLowerCase())
-                    || (alumno.dui && alumno.dui.includes(this.buscar))
-            ).toArray();
+            this.cargando = true;
+            const searchTerm = this.buscar.toLowerCase();
+            const careerFilter = this.filtroCarrera;
+
+            this.alumnos = await db.alumnos.filter(alumno => {
+                const searchMatch = (alumno.codigo && alumno.codigo.toLowerCase().includes(searchTerm)) ||
+                    (alumno.nombre && alumno.nombre.toLowerCase().includes(searchTerm)) ||
+                    (alumno.dui && alumno.dui.includes(this.buscar)); // Keep original DUI search
+
+                const careerMatch = !careerFilter || String(alumno.carreraId) === String(careerFilter);
+
+                return searchMatch && careerMatch;
+            }).toArray();
+
+            this.carreras = await db.carreras.orderBy('nombre').toArray();
+            this.cargando = false;
         },
         async eliminarAlumno(alumno, e) {
             e.stopPropagation();

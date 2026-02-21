@@ -16,6 +16,7 @@ const miPerfil = {
             // Usuarios record id
             _userId: null,
             _alumnoId: null,
+            listaCarreras: [],
         };
     },
     async mounted() {
@@ -57,9 +58,12 @@ const miPerfil = {
                     this.perfil.direccion = alumno.direccion || '';
                     this.perfil.codigo = alumno.codigo || '';
                     this.perfil.carrera = alumno.carrera || '';
+                    this.perfil.carreraId = String(alumno.carreraId || '');
                     this.perfil.foto = alumno.foto || '';
                     if (!this.perfil.email) this.perfil.email = alumno.email || '';
                 }
+                // Cargar todas las carreras para el selector
+                this.listaCarreras = await db.carreras.filter(c => (c.estado || 'activa') === 'activa').toArray();
             } finally {
                 this.cargando = false;
             }
@@ -139,13 +143,42 @@ const miPerfil = {
             this.guardando = true;
             try {
                 if (this._alumnoId) {
-                    await db.alumnos.update(this._alumnoId, {
+                    let upd = {
                         nombre: this.perfil.nombre.trim(),
                         email: this.perfil.email.trim(),
                         telefono: this.perfil.telefono.trim(),
                         direccion: this.perfil.direccion.trim(),
                         foto: this.perfil.foto
-                    });
+                    };
+
+                    // Generar código si no tiene
+                    if (!this.perfil.codigo && this.perfil.carreraId) {
+                        const car = this.listaCarreras.find(c => String(c.idCarrera) === String(this.perfil.carreraId));
+                        if (car) {
+                            const anio = new Date().getFullYear();
+                            const prefijo = `A-${car.codigo}`;
+                            const correlativo = await db.alumnos.where('codigo').startsWith(prefijo).count() + 1;
+                            const num = String(correlativo).padStart(3, '0');
+                            const nuevoCodigo = `${prefijo}${num}-${anio}`;
+
+                            upd.codigo = nuevoCodigo;
+                            upd.carrera = car.nombre;
+                            upd.carreraId = car.idCarrera;
+                            this.perfil.codigo = nuevoCodigo;
+                            this.perfil.carrera = car.nombre;
+                        }
+                    }
+
+                    await db.alumnos.update(this._alumnoId, upd);
+
+                    // Sincronizar con tabla Usuarios
+                    if (this._userId && upd.codigo) {
+                        await db.usuarios.update(this._userId, { codigo: upd.codigo });
+                        // Actualizar sesión
+                        const s = JSON.parse(sessionStorage.getItem('sesionUniversidad') || '{}');
+                        s.codigo = upd.codigo;
+                        sessionStorage.setItem('sesionUniversidad', JSON.stringify(s));
+                    }
                 }
                 if (this._userId) {
                     await db.usuarios.update(this._userId, { email: this.perfil.email.trim() });
@@ -215,14 +248,19 @@ const miPerfil = {
                             </div>
 
                             <div class="col-sm-6">
-                                <label class="form-label small fw-bold text-body-secondary text-uppercase">Código de Alumno</label>
-                                <input :value="perfil.codigo" class="form-control form-control-sm bg-body-secondary border-secondary-subtle" readonly>
-                                <div class="form-text text-body-secondary">Asignado por el administrador.</div>
+                                <label class="form-label small fw-bold text-body-secondary text-uppercase">Carnet Universitario</label>
+                                <input :value="perfil.codigo || 'PENDIENTE'" class="form-control form-control-sm bg-body-secondary border-secondary-subtle fw-bold" 
+                                       :class="!perfil.codigo ? 'text-danger' : 'text-primary'" readonly>
+                                <div class="form-text text-body-secondary" v-if="!perfil.codigo">Se generará al elegir tu carrera.</div>
                             </div>
                             <div class="col-sm-6">
-                                <label class="form-label small fw-bold text-body-secondary text-uppercase">Carrera</label>
-                                <input :value="perfil.carrera || '—'" class="form-control form-control-sm bg-body-secondary border-secondary-subtle" readonly>
-                                <div class="form-text text-body-secondary">Asignada por el administrador.</div>
+                                <label class="form-label small fw-bold text-body-secondary text-uppercase">Carrera <span class="text-danger" v-if="!perfil.codigo">*</span></label>
+                                <select v-if="!perfil.codigo" v-model="perfil.carreraId" class="form-select form-select-sm bg-transparent border-primary">
+                                    <option value="">Selecciona tu carrera...</option>
+                                    <option v-for="c in listaCarreras" :key="c.idCarrera" :value="c.idCarrera">{{ c.nombre }}</option>
+                                </select>
+                                <input v-else :value="perfil.carrera" class="form-control form-control-sm bg-body-secondary border-secondary-subtle" readonly>
+                                <div class="form-text text-body-secondary" v-if="!perfil.codigo">Esta acción asignará tu identidad oficial.</div>
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-body-secondary text-uppercase">Nombre completo *</label>
