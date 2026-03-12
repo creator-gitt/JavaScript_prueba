@@ -1,0 +1,46 @@
+REGISTROS DE PRUEBA - SISTEMA ACADÉMICO
+
+========================================
+¡IMPORTANTE!: SOLUCIÓN AL ERROR DE LLAVE DUPLICADA '0'
+========================================
+Si al pegar los registros te sale un error que dice "Entrada duplicada '0' para la clave 'PRIMARY'", 
+significa que tus tablas no tienen activado el "Auto Incremento".
+
+Para arreglarlo, copia y pega este bloque PRIMERO en la pestaña SQL:
+
+ALTER TABLE `alumnos` MODIFY `id` int(10) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `docentes` MODIFY `id` int(10) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `materias` MODIFY `id` int(10) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `matriculas` MODIFY `id` int(10) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `inscripciones` MODIFY `id` int(10) NOT NULL AUTO_INCREMENT;
+
+========================================
+SCRIPTS SQL PARA IMPORTAR (PASO A PASO)
+========================================
+Recuerda: El cuadro de texto SQL debe estar totalmente VACÍO antes de pegar.
+
+-- 1. Alumnos
+INSERT INTO `alumnos` (`idAlumno`, `codigo`, `nombre`, `direccion`, `email`, `telefono`) VALUES
+('1773276000001', 'AL001', 'Juan Pérez', 'Santa Ana, El Salvador', 'juan.perez@email.com', '7700-1122'),
+('1773276000002', 'AL002', 'María García', 'San Salvador, El Salvador', 'maria.garcia@email.com', '7800-3344');
+
+-- 2. Docentes
+INSERT INTO `docentes` (`idDocente`, `codigo`, `nombre`, `direccion`, `email`, `telefono`, `escalafon`) VALUES
+('1773276000003', 'DOC001', 'Ing. Roberto Gómez', 'Antiguo Cuscatlán', 'roberto.gomez@u.edu', '7000-5566', 'ingeniero'),
+('1773276000004', 'DOC002', 'Dra. Ana López', 'Santa Tecla', 'ana.lopez@u.edu', '7100-7788', 'doctor');
+
+-- 3. Materias
+INSERT INTO `materias` (`idMateria`, `codigo`, `nombre`, `uv`) VALUES
+('1773276000005', 'MAT001', 'Programación I', 4),
+('1773276000006', 'MAT002', 'Bases de Datos I', 4),
+('1773276000007', 'MAT003', 'Matemática I', 4);
+
+-- 4. Matriculas
+INSERT INTO `matriculas` (`idMatricula`, `idAlumno`, `ciclo`, `fecha`, `pago`) VALUES
+('1773276000008', '1773276000001', '01-2026', '2026-01-15', 'Si'),
+('1773276000009', '1773276000002', '01-2026', '2026-01-16', 'Si');
+
+-- 5. Inscripciones
+INSERT INTO `inscripciones` (`idInscripcion`, `idAlumno`, `idMateria`, `ciclo`, `fecha`) VALUES
+('1773276000010', '1773276000001', '1773276000005', '01-2026', '2026-02-01'),
+('1773276000011', '1773276000001', '1773276000006', '01-2026', '2026-02-01');
