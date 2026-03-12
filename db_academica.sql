@@ -34,8 +34,40 @@ CREATE TABLE `alumnos` (
   `nombre` char(100) NOT NULL,
   `direccion` char(150) NOT NULL,
   `email` char(150) NOT NULL,
-  `telefono` char(9) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `telefono` char(9) NOT NULL,
+  `hash` char(64) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `docentes`
+--
+
+CREATE TABLE `docentes` (
+  `id` int(10) NOT NULL,
+  `idDocente` char(36) NOT NULL,
+  `codigo` char(10) NOT NULL,
+  `nombre` char(100) NOT NULL,
+  `direccion` char(150) NOT NULL,
+  `email` char(150) NOT NULL,
+  `telefono` char(9) NOT NULL,
+  `escalafon` enum('tecnico','profesor','ingeniero','maestria','doctor') NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `materias`
+--
+
+CREATE TABLE `materias` (
+  `id` int(10) NOT NULL,
+  `idMateria` char(36) NOT NULL,
+  `codigo` char(10) NOT NULL,
+  `nombre` char(100) NOT NULL,
+  `uv` int(2) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Indexes for dumped tables
@@ -46,7 +78,24 @@ CREATE TABLE `alumnos` (
 --
 ALTER TABLE `alumnos`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `idAlumno` (`idAlumno`);
+  ADD UNIQUE KEY `idAlumno` (`idAlumno`),
+  ADD UNIQUE KEY `codigo` (`codigo`);
+
+--
+-- Indexes for table `docentes`
+--
+ALTER TABLE `docentes`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `idDocente` (`idDocente`),
+  ADD UNIQUE KEY `codigo` (`codigo`);
+
+--
+-- Indexes for table `materias`
+--
+ALTER TABLE `materias`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `idMateria` (`idMateria`),
+  ADD UNIQUE KEY `codigo` (`codigo`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -56,6 +105,18 @@ ALTER TABLE `alumnos`
 -- AUTO_INCREMENT for table `alumnos`
 --
 ALTER TABLE `alumnos`
+  MODIFY `id` int(10) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `docentes`
+--
+ALTER TABLE `docentes`
+  MODIFY `id` int(10) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `materias`
+--
+ALTER TABLE `materias`
   MODIFY `id` int(10) NOT NULL AUTO_INCREMENT;
 COMMIT;
 
