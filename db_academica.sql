@@ -69,6 +69,36 @@ CREATE TABLE `materias` (
   `uv` int(2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `matriculas`
+--
+
+CREATE TABLE `matriculas` (
+  `id` int(10) NOT NULL,
+  `idMatricula` char(36) NOT NULL,
+  `idAlumno` char(36) NOT NULL,
+  `ciclo` char(10) NOT NULL,
+  `fecha` date NOT NULL,
+  `pago` enum('Si','No') NOT NULL DEFAULT 'No'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `inscripciones`
+--
+
+CREATE TABLE `inscripciones` (
+  `id` int(10) NOT NULL,
+  `idInscripcion` char(36) NOT NULL,
+  `idAlumno` char(36) NOT NULL,
+  `idMateria` char(36) NOT NULL,
+  `ciclo` char(10) NOT NULL,
+  `fecha` date NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Indexes for dumped tables
 --
@@ -98,6 +128,20 @@ ALTER TABLE `materias`
   ADD UNIQUE KEY `codigo` (`codigo`);
 
 --
+-- Indexes for table `matriculas`
+--
+ALTER TABLE `matriculas`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `idMatricula` (`idMatricula`);
+
+--
+-- Indexes for table `inscripciones`
+--
+ALTER TABLE `inscripciones`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `idInscripcion` (`idInscripcion`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -117,6 +161,18 @@ ALTER TABLE `docentes`
 -- AUTO_INCREMENT for table `materias`
 --
 ALTER TABLE `materias`
+  MODIFY `id` int(10) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `matriculas`
+--
+ALTER TABLE `matriculas`
+  MODIFY `id` int(10) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `inscripciones`
+--
+ALTER TABLE `inscripciones`
   MODIFY `id` int(10) NOT NULL AUTO_INCREMENT;
 COMMIT;
 
