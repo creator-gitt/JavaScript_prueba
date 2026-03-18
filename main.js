@@ -11,6 +11,17 @@ db.version(2).stores({
 
 const App = {
     setup() {
+        // --- FIX DE PERSISTENCIA ---
+        // Solicitar al navegador que no borre los datos de IndexedDB por falta de espacio
+        const checkStoragePersistence = async () => {
+            if (navigator.storage && navigator.storage.persist) {
+                const granted = await navigator.storage.persist();
+                console.log(granted ? "Almacenamiento persistente concedido." : "Almacenamiento persistente denegado.");
+            }
+        };
+        checkStoragePersistence();
+        // ---------------------------
+
         const sidebarVisible = ref(false);
         const windowWidth = ref(window.innerWidth);
         const darkMode = ref(localStorage.getItem('theme') === 'dark');
