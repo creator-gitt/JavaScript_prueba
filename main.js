@@ -1,4 +1,4 @@
-import { createApp, ref, computed, onMounted } from 'https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.esm-browser.js';
+import { createApp, ref, computed, onMounted, watch } from 'https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.esm-browser.js';
 import Dexie from 'https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.mjs';
 
 const db = new Dexie('db_usss017224_jonathan_guandique');
@@ -28,6 +28,57 @@ const App = {
         const windowWidth = ref(window.innerWidth);
         const darkMode = ref(localStorage.getItem('theme') === 'dark');
         
+        // --- SIMULACIÓN DE SESIÓN (eLibro) ---
+        const simuladorLoginId = ref('admin'); // 'admin' o idUsuario
+        const rolActual = computed(() => simuladorLoginId.value === 'admin' ? 'admin' : 'lector');
+        
+        const cambiarSesion = () => {
+            if (rolActual.value === 'lector') {
+                currentTab.value = 'catalogo'; // Kiosco
+            } else {
+                currentTab.value = 'dashboard';
+            }
+        };
+
+        const misPrestamos = computed(() => {
+            if (rolActual.value !== 'lector') return [];
+            return prestamos.value.filter(p => p.idUsuario === simuladorLoginId.value && p.estado === 'Prestado');
+        });
+
+        const autoPrestamo = async (idLibro) => {
+            const libroOcupado = prestamos.value.find(p => p.idLibro === idLibro && p.estado === 'Prestado');
+            if (libroOcupado) {
+                alertify.error('Este libro ya está prestado.');
+                return;
+            }
+            
+            // Setear a 7 dias por defecto de eLibro
+            const hoy = new Date();
+            const fechaPrestamo = hoy.toISOString().split('T')[0];
+            const devolucionDate = new Date();
+            devolucionDate.setDate(hoy.getDate() + 7);
+            const fechaDevolucion = devolucionDate.toISOString().split('T')[0];
+
+            isSaving.value = true;
+            try {
+                await db.prestamos.add({
+                    idLibro: idLibro,
+                    idUsuario: simuladorLoginId.value,
+                    fechaPrestamo: fechaPrestamo,
+                    fechaDevolucion: fechaDevolucion,
+                    estado: 'Prestado'
+                });
+                await cargarPrestamos();
+                currentTab.value = 'estante';
+                alertify.success('Libro añadido a tu estante virtual con éxito.');
+            } catch (error) {
+                alertify.error('Error al realizar auto-préstamo');
+            } finally {
+                setTimeout(() => isSaving.value = false, 500);
+            }
+        };
+        // -------------------------------------
+
         const applyTheme = () => {
             document.documentElement.setAttribute('data-bs-theme', darkMode.value ? 'dark' : 'light');
             localStorage.setItem('theme', darkMode.value ? 'dark' : 'light');
@@ -103,6 +154,15 @@ const App = {
         const isSaving = ref(false);
         const isSearching = ref(false);
         const isbnError = ref('');
+
+        // --- SISTEMA DE ANOTACIONES ESTANTE ---
+        const guardarAnotacion = async (idPrestamo, nota) => {
+            // Guardaremos la nota en el registro de prestamo para simplificar la persistencia
+            await db.prestamos.update(idPrestamo, { anotaciones: nota });
+            await cargarPrestamos();
+            alertify.success('Anotación guardada en tu estante.');
+        };
+        // --------------------------------------
 
         const cargarAutores = async () => {
             autores.value = await db.autor.toArray();
@@ -427,13 +487,70 @@ const App = {
         // --- MANEJO DE ALERTAS DE VENCIMIENTO ---
         const esAtrasado = (fechaDevolucion, estado) => {
             if (estado !== 'Prestado') return false;
-            const hoy = new Date();
-            hoy.setHours(0, 0, 0, 0); // Ignorar la hora, solo comparar el día
-            
-            // Se le concatena T00:00:00 para evitar desajustes de zona horaria por el formato YYYY-MM-DD
-            const dev = new Date(fechaDevolucion + 'T00:00:00'); 
-            return dev < hoy;
+            const hoy = new Date().toISOString().split('T')[0];
+            return fechaDevolucion < hoy;
         };
+
+        // --- CHART.JS ANALYTICS DASHBOARD ---
+        let myChart = null;
+        
+        const renderChart = () => {
+            if (rolActual.value !== 'admin') return;
+            setTimeout(() => {
+                const ctx = document.getElementById('popularBooksChart');
+                if (!ctx) return;
+                
+                if (myChart) myChart.destroy();
+                
+                const counts = {};
+                prestamos.value.forEach(p => {
+                    counts[p.idLibro] = (counts[p.idLibro] || 0) + 1;
+                });
+                
+                const topBooks = Object.keys(counts)
+                    .sort((a, b) => counts[b] - counts[a])
+                    .slice(0, 5)
+                    .map(id => ({
+                        titulo: obtenerTituloLibro(parseInt(id, 10)),
+                        cantidad: counts[id]
+                    }));
+                
+                if (topBooks.length === 0) return;
+
+                myChart = new window.Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: topBooks.map(b => b.titulo.substring(0, 20) + (b.titulo.length > 20 ? '...' : '')),
+                        datasets: [{
+                            label: 'Veces Prestado',
+                            data: topBooks.map(b => b.cantidad),
+                            backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                            borderColor: 'rgba(13, 110, 253, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    }
+                });
+            }, 300);
+        };
+
+        watch(currentTab, (newVal) => {
+            if (newVal === 'dashboard') {
+                renderChart();
+            }
+        });
+        
+        watch(prestamos, () => {
+            if (currentTab.value === 'dashboard') {
+                renderChart();
+            }
+        }, { deep: true });
+        // -------------------------------------
 
         const librosFiltrados = computed(() => {
             const qr = filtroLibro.value.toLowerCase().trim();
@@ -463,6 +580,7 @@ const App = {
                 await cargarAutores();
                 await cargarLibros();
                 await cargarPrestamos();
+                renderChart();
             } catch (error) {
                 console.error("Error al cargar la base de datos IndexedDB:", error);
                 alertify.error("Error al cargar registros. IndexedDB podría estar bloqueado en el navegador.", 5);
@@ -475,6 +593,9 @@ const App = {
             darkMode,
             toggleDarkMode,
             currentTab,
+            simuladorLoginId,
+            rolActual,
+            cambiarSesion,
             categorias,
             editModeCategoria,
             formCategoria,
@@ -527,7 +648,10 @@ const App = {
             obtenerTituloLibro,
             obtenerNombreUsuario,
             esAtrasado,
-            obtenerNombreCategoria
+            obtenerNombreCategoria,
+            guardarAnotacion,
+            misPrestamos,
+            autoPrestamo
         };
     }
 };
