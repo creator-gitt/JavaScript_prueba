@@ -3,10 +3,12 @@ import Dexie from 'https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.mjs';
 
 const db = new Dexie('db_usss017224_jonathan_guandique');
 
-db.version(2).stores({
+db.version(4).stores({
+    categorias: '++idCategoria, nombre, descripcion',
     autor: '++idAutor, codigo, nombre, pais, telefono',
-    libros: '++idLibro, idAutor, isbn, titulo, editorial, edicion, portada',
-    prestamos: '++idPrestamo, idLibro, lector, fechaPrestamo, fechaDevolucion, estado'
+    libros: '++idLibro, idAutor, idCategoria, isbn, titulo, editorial, edicion, portada',
+    usuarios: '++idUsuario, documento, nombre, email, telefono',
+    prestamos: '++idPrestamo, idLibro, idUsuario, fechaPrestamo, fechaDevolucion, estado'
 });
 
 const App = {
@@ -42,6 +44,57 @@ const App = {
         });
 
         const currentTab = ref('dashboard');
+
+        // --- LÓGICA DE CATEGORÍAS ---
+        const categorias = ref([]);
+        const editModeCategoria = ref(false);
+        const formCategoria = ref({ idCategoria: null, nombre: '', descripcion: '' });
+
+        const cargarCategorias = async () => {
+            categorias.value = await db.categorias.toArray();
+        };
+
+        const guardarCategoria = async () => {
+            isSaving.value = true;
+            try {
+                const { idCategoria, ...data } = formCategoria.value;
+                if (editModeCategoria.value) {
+                    await db.categorias.update(idCategoria, data);
+                    alertify.success('Categoría actualizada');
+                } else {
+                    await db.categorias.add(data);
+                    alertify.success('Categoría guardada');
+                }
+                await cargarCategorias();
+                cancelarEdicionCategoria();
+            } catch (error) {
+                alertify.error('Error al guardar categoría');
+            } finally {
+                setTimeout(() => isSaving.value = false, 500);
+            }
+        };
+
+        const editarCategoria = (cat) => {
+            formCategoria.value = { ...cat };
+            editModeCategoria.value = true;
+        };
+
+        const eliminarCategoria = async (id) => {
+            alertify.confirm('Eliminar Categoría', '¿Eliminar esta categoría?', 
+                async () => {
+                    await db.categorias.delete(id);
+                    await cargarCategorias();
+                    alertify.success('Eliminada');
+                }, null
+            );
+        };
+
+        const cancelarEdicionCategoria = () => {
+            formCategoria.value = { idCategoria: null, nombre: '', descripcion: '' };
+            editModeCategoria.value = false;
+        };
+
+        // -----------------------------
 
         const autores = ref([]);
         const filtroAutor = ref('');
@@ -116,10 +169,71 @@ const App = {
             );
         });
 
+        // --- LÓGICA DE USUARIOS (LECTORES) ---
+        const usuarios = ref([]);
+        const filtroUsuario = ref('');
+        const editModeUsuario = ref(false);
+        const formUsuario = ref({ idUsuario: null, documento: '', nombre: '', email: '', telefono: '' });
+
+        const cargarUsuarios = async () => {
+            usuarios.value = await db.usuarios.toArray();
+        };
+
+        const guardarUsuario = async () => {
+            isSaving.value = true;
+            try {
+                const { idUsuario, ...data } = formUsuario.value;
+                if (editModeUsuario.value) {
+                    await db.usuarios.update(idUsuario, data);
+                    alertify.success('Usuario actualizado');
+                } else {
+                    await db.usuarios.add(data);
+                    alertify.success('Usuario registrado');
+                }
+                await cargarUsuarios();
+                cancelarEdicionUsuario();
+            } catch (error) {
+                alertify.error('Error al guardar el usuario');
+            } finally {
+                setTimeout(() => isSaving.value = false, 500);
+            }
+        };
+
+        const editarUsuario = (user) => {
+            formUsuario.value = { ...user };
+            editModeUsuario.value = true;
+        };
+
+        const eliminarUsuario = async (id) => {
+            alertify.confirm('Eliminar Lector', '¿Eliminar este lector permanentemente?', 
+                async () => {
+                    await db.usuarios.delete(id);
+                    await cargarUsuarios();
+                    alertify.success('Lector eliminado');
+                }, null
+            );
+        };
+
+        const cancelarEdicionUsuario = () => {
+            formUsuario.value = { idUsuario: null, documento: '', nombre: '', email: '', telefono: '' };
+            editModeUsuario.value = false;
+        };
+
+        const usuariosFiltrados = computed(() => {
+            const qr = filtroUsuario.value.toLowerCase().trim();
+            if (!qr) return usuarios.value;
+            return usuarios.value.filter(u => 
+                u.nombre.toLowerCase().includes(qr) ||
+                u.documento.toLowerCase().includes(qr)
+            );
+        });
+
+        // -----------------------------
+
         const libros = ref([]);
         const filtroLibro = ref('');
         const editModeLibro = ref(false);
-        const formLibro = ref({ idLibro: null, idAutor: '', isbn: '', titulo: '', editorial: '', edicion: '', portada: '' });
+        const formLibro = ref({ idLibro: null, idAutor: '', idCategoria: '', isbn: '', titulo: '', editorial: '', edicion: '', portada: '' });
         const vistaGaleria = ref(false);
 
         const cargarLibros = async () => {
@@ -176,6 +290,7 @@ const App = {
             try {
                 const data = {
                     idAutor: parseInt(formLibro.value.idAutor, 10),
+                    idCategoria: parseInt(formLibro.value.idCategoria, 10) || null,
                     isbn: formLibro.value.isbn,
                     titulo: formLibro.value.titulo,
                     editorial: formLibro.value.editorial,
@@ -220,7 +335,7 @@ const App = {
         };
 
         const cancelarEdicionLibro = () => {
-            formLibro.value = { idLibro: null, idAutor: '', isbn: '', titulo: '', editorial: '', edicion: '', portada: '' };
+            formLibro.value = { idLibro: null, idAutor: '', idCategoria: '', isbn: '', titulo: '', editorial: '', edicion: '', portada: '' };
             editModeLibro.value = false;
             isbnError.value = '';
         };
@@ -228,7 +343,7 @@ const App = {
         // Lógica de Préstamos
         const prestamos = ref([]);
         const editModePrestamo = ref(false);
-        const formPrestamo = ref({ idPrestamo: null, idLibro: '', lector: '', fechaPrestamo: '', fechaDevolucion: '', estado: 'Prestado' });
+        const formPrestamo = ref({ idPrestamo: null, idLibro: '', idUsuario: '', fechaPrestamo: '', fechaDevolucion: '', estado: 'Prestado' });
 
         const cargarPrestamos = async () => {
             prestamos.value = await db.prestamos.toArray();
@@ -237,9 +352,21 @@ const App = {
         const guardarPrestamo = async () => {
             isSaving.value = true;
             try {
+                const idLibroParsed = parseInt(formPrestamo.value.idLibro, 10);
+
+                // --- VALIDACIÓN DE DISPONIBILIDAD (STOCK) ---
+                if (!editModePrestamo.value) {
+                    const libroOcupado = prestamos.value.find(p => p.idLibro === idLibroParsed && p.estado === 'Prestado');
+                    if (libroOcupado) {
+                        alertify.error('Error: Este libro ya se encuentra prestado actualmente.');
+                        isSaving.value = false;
+                        return; // Evita que se guarde
+                    }
+                }
+
                 const data = {
-                    idLibro: parseInt(formPrestamo.value.idLibro, 10),
-                    lector: formPrestamo.value.lector,
+                    idLibro: idLibroParsed,
+                    idUsuario: parseInt(formPrestamo.value.idUsuario, 10),
                     fechaPrestamo: formPrestamo.value.fechaPrestamo,
                     fechaDevolucion: formPrestamo.value.fechaDevolucion,
                     estado: formPrestamo.value.estado
@@ -283,13 +410,29 @@ const App = {
         };
 
         const cancelarEdicionPrestamo = () => {
-            formPrestamo.value = { idPrestamo: null, idLibro: '', lector: '', fechaPrestamo: '', fechaDevolucion: '', estado: 'Prestado' };
+            formPrestamo.value = { idPrestamo: null, idLibro: '', idUsuario: '', fechaPrestamo: '', fechaDevolucion: '', estado: 'Prestado' };
             editModePrestamo.value = false;
         };
 
         const obtenerTituloLibro = (idLibro) => {
             const libro = libros.value.find(l => l.idLibro === idLibro);
             return libro ? libro.titulo : 'Libro no encontrado';
+        };
+
+        const obtenerNombreUsuario = (idUsuario) => {
+            const user = usuarios.value.find(u => u.idUsuario === idUsuario);
+            return user ? user.nombre : 'Lector Desconocido';
+        };
+
+        // --- MANEJO DE ALERTAS DE VENCIMIENTO ---
+        const esAtrasado = (fechaDevolucion, estado) => {
+            if (estado !== 'Prestado') return false;
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0); // Ignorar la hora, solo comparar el día
+            
+            // Se le concatena T00:00:00 para evitar desajustes de zona horaria por el formato YYYY-MM-DD
+            const dev = new Date(fechaDevolucion + 'T00:00:00'); 
+            return dev < hoy;
         };
 
         const librosFiltrados = computed(() => {
@@ -307,8 +450,16 @@ const App = {
             return autor ? autor.nombre : 'Desconocido/Eliminado';
         };
 
+        const obtenerNombreCategoria = (idCategoria) => {
+            if (!idCategoria) return 'Sin Categoría';
+            const cat = categorias.value.find(c => c.idCategoria === idCategoria);
+            return cat ? cat.nombre : 'Eliminada';
+        };
+
         onMounted(async () => {
             try {
+                await cargarUsuarios();
+                await cargarCategorias();
                 await cargarAutores();
                 await cargarLibros();
                 await cargarPrestamos();
@@ -324,6 +475,13 @@ const App = {
             darkMode,
             toggleDarkMode,
             currentTab,
+            categorias,
+            editModeCategoria,
+            formCategoria,
+            guardarCategoria,
+            editarCategoria,
+            eliminarCategoria,
+            cancelarEdicionCategoria,
             autores,
             filtroAutor,
             editModeAutor,
@@ -333,6 +491,15 @@ const App = {
             eliminarAutor,
             cancelarEdicionAutor,
             autoresFiltrados,
+            usuarios,
+            filtroUsuario,
+            editModeUsuario,
+            formUsuario,
+            guardarUsuario,
+            editarUsuario,
+            eliminarUsuario,
+            cancelarEdicionUsuario,
+            usuariosFiltrados,
             libros,
             filtroLibro,
             editModeLibro,
@@ -357,7 +524,10 @@ const App = {
             eliminarPrestamo,
             devolverLibro,
             cancelarEdicionPrestamo,
-            obtenerTituloLibro
+            obtenerTituloLibro,
+            obtenerNombreUsuario,
+            esAtrasado,
+            obtenerNombreCategoria
         };
     }
 };
