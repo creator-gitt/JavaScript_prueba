@@ -24,11 +24,11 @@
             <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
                 <div class="navbar-nav">
                     {{-- Usaremos rutas estandar de Laravel cuando existan, ej: {{ route('alumnos.index') }} --}}
-                    <a class="nav-link" href="#">Alumnos</a>
-                    <a class="nav-link" href="#">Materias</a>
-                    <a class="nav-link" href="#">Docentes</a>
-                    <a class="nav-link" href="#">Matrículas</a>
-                    <a class="nav-link" href="#">Inscripciones</a>
+                    <a class="nav-link" href="{{ route('alumnos.index') }}">Alumnos</a>
+                    <a class="nav-link" href="{{ route('materias.index') }}">Materias</a>
+                    <a class="nav-link" href="{{ route('docentes.index') }}">Docentes</a>
+                    <a class="nav-link" href="{{ route('matriculas.index') }}">Matrículas</a>
+                    <a class="nav-link" href="{{ route('inscripciones.index') }}">Inscripciones</a>
                 </div>
             </div>
         </div>
