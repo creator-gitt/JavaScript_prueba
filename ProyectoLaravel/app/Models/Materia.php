@@ -10,8 +10,10 @@ class Materia extends Model
     use HasFactory;
 
     protected $fillable = [
-        'codigo',
-        'nombre',
-        'uv',
+        'idMateria', 'codigo', 'nombre', 'uv'
     ];
+
+    public function inscripciones() {
+        return $this->hasMany(Inscripcion::class, 'idMateria');
+    }
 }

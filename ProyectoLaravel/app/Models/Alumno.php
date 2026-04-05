@@ -10,10 +10,14 @@ class Alumno extends Model
     use HasFactory;
 
     protected $fillable = [
-        'codigo',
-        'nombre',
-        'direccion',
-        'email',
-        'telefono',
+        'idAlumno', 'codigo', 'nombre', 'direccion', 'email', 'telefono'
     ];
+
+    public function matriculas() {
+        return $this->hasMany(Matricula::class, 'idAlumno');
+    }
+
+    public function inscripciones() {
+        return $this->hasMany(Inscripcion::class, 'idAlumno');
+    }
 }
