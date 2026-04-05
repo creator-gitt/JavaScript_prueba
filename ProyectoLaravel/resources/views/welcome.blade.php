@@ -398,8 +398,8 @@
                                 </div>
                             </div>
                             <div class="col-lg-5 d-none d-lg-block text-center">
-                                <div class="bg-white p-4 rounded-5 shadow-lg d-inline-block transition-all welcome-illustration" style="border: 4px solid rgba(255,255,255,0.1);">
-                                    <img src="{{ asset('School.png') }}" alt="School Logo" class="img-fluid" style="max-height: 300px; width: auto; object-fit: contain;">
+                                <div class="d-inline-block transition-all welcome-illustration">
+                                    <img src="{{ asset('School.png') }}" alt="School Logo" class="img-fluid" style="max-height: 350px; width: auto; object-fit: contain; filter: drop-shadow(0 20px 30px rgba(0,0,0,0.3));">
                                 </div>
                             </div>
                         </div>
